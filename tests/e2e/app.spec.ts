@@ -13,6 +13,10 @@ test('loads, renders the welcome shape and shows the welcome card on a first vis
   expect(varied).toBeGreaterThan(20);
   // the studio reflection map (CC0 HDRI, public/env/studio.bin) loads from the subpath
   await expect.poll(() => page.evaluate(() => window.sdfForge.environment())).toBe(true);
+  // ...and survives the render target being resized (window resize, dynamic resolution)
+  await page.setViewportSize({ width: 900, height: 640 });
+  await waitForRender(page);
+  expect(await page.evaluate(() => window.sdfForge.environment())).toBe(true);
   await page.getByRole('button', { name: 'No thanks' }).click();
   await expect(page.getByTestId('welcome')).toBeHidden();
   expect(errors).toEqual([]);
