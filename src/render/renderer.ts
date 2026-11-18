@@ -156,7 +156,7 @@ export class Renderer {
 
   /** True once the studio reflection map is on the GPU. */
   get hasEnvironment(): boolean {
-    return !!this.envTex;
+    return !!this.envTex && this.gl.isTexture(this.envTex);
   }
 
   /**
@@ -464,7 +464,6 @@ export class Renderer {
     if (this.accumTex && this.accumW === w && this.accumH === h) return;
     const gl = this.gl;
     if (this.accumTex) gl.deleteTexture(this.accumTex);
-    if (this.envTex) gl.deleteTexture(this.envTex);
     if (this.accumFbo) gl.deleteFramebuffer(this.accumFbo);
     this.accumTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.accumTex);
