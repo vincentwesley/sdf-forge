@@ -12,7 +12,7 @@ Living document: read this first when resuming work on SDF Forge.
 
 ## Architecture in one minute
 
-`src/core` is DOM-free TypeScript: `ir/` (typed expression IR → GLSL and scalar JS), `nodes/` (34 node definitions
+`src/core` is DOM-free TypeScript: `ir/` (typed expression IR → GLSL and scalar JS), `nodes/` (35 node definitions
 with emit/bounds/Lipschitz/help), `graph/` (document model, validation, auto layout), `compile.ts` (graph → shader +
 CPU evaluator + param slots), `mesh/` (Manifold level-set meshing and STL/3MF/GLB/OBJ writers, `zip.ts`), `share.ts` (links).
 `src/render` is the WebGL2 ray marcher; `src/ui` the React app (xyflow graph, inspector, dialogs); `src/state` the
@@ -43,7 +43,7 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 | M2 renderer + GPU/CPU agreement | done (agreement ≤ 1e-3 on all nodes/examples) |
 | M3 editor UI | done |
 | M4 mesh export + validation | done (63 meshes pass trimesh, GLBs pass Khronos validator) |
-| M5 share links, gallery, templates, Controls | done (16 examples, 6 printable templates with Controls) |
+| M5 share links, gallery, templates, Controls | done (16 examples at first build, 18 now; printable templates with Controls) |
 | M6 picking, gizmo, learning, render/video/code export | done |
 | M7 e2e, screenshots, a11y, fps; polish passes; usability | done (48 browser tests; two polish passes; USABILITY.md) |
 | Next idea from the brainstorm: Text node | done |
@@ -53,8 +53,9 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 
 1. The site is live and deploys on every push to `main`. After a merge, `node scripts/check-live.mjs` confirms it.
 2. Ideas left in the brainstorm (DECISIONS.md), most valuable first: Shadertoy export for text (embed the grid as
-   a texture channel note or const array), parameter animation over time, node groups / sub-graphs, a spline profile
-   editor for Revolve, 3MF export, a WGSL/WebGPU back end from the same IR.
+   a texture channel note or const array), parameter animation over time, node groups / sub-graphs, a WGSL/WebGPU
+   back end from the same IR. Done since the first build: 3MF export, studio reflections, the Profile (drawn
+   outline) node — see CHANGELOG.md.
 3. Each change: `npm run acceptance` (everything) or at least lint + typecheck + unit + build, then push to the
    working branch, open a PR into `main` and merge once CI is green.
 
@@ -75,7 +76,7 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
   phone/tablet/desktop layouts, keyboard support, reduced motion.
 * Exports: STL/3MF/GLB/OBJ (watertight, manifold, sized in mm, credited), PNG up to 4K, MP4/WebM turntable,
   Shadertoy/GLSL code. Share links and graph files.
-* Gallery: 16 examples incl. 6 printable templates whose Controls are tested across their ranges.
+* Gallery: 18 examples incl. 7 printable templates whose Controls are tested across their ranges.
 * Docs: README (screenshots, GIF, live link), RESEARCH, PLAN, DECISIONS, ACCEPTANCE, USABILITY (three
   walkthroughs, all friction points fixed or recorded), CHANGELOG, CONTRIBUTING, SECURITY, MIT licence
   (© 2026 Vin's Atelier).

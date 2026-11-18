@@ -42,6 +42,14 @@ for (const theme of ['dark', 'light'] as const) {
     await page.keyboard.press('Escape');
     await page.getByTestId('graph-add').click();
     await audit(page, `${theme} add menu`);
+    await page.keyboard.press('Escape');
+    // the Profile point editor (SVG handles are focusable buttons)
+    await page.evaluate(() => window.sdfForge.loadExample('pawn'));
+    await page.locator('.react-flow__node', { hasText: 'Body outline' }).first().click();
+    await expect(
+      page.getByRole('complementary', { name: 'Properties' }).getByTestId('points-editor'),
+    ).toBeVisible();
+    await audit(page, `${theme} profile editor`);
   });
 }
 

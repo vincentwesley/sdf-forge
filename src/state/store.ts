@@ -146,6 +146,8 @@ store.subscribe((s, prev) => {
 
 const MAX_HISTORY = 200;
 const MERGE_MS = 1200;
+/** While a pointer gesture is held, its changes merge however slowly they arrive. */
+let gestureActive = false;
 
 /**
  * Apply a new document. Changes with the same `merge` key within a short time
@@ -155,7 +157,8 @@ export function commit(doc: SdfDoc, opts: { merge?: string; selection?: string[]
   const s = get();
   if (doc === s.doc) return;
   const now = performance.now();
-  const merging = !!opts.merge && opts.merge === s.mergeKey && now - s.mergeTime < MERGE_MS;
+  const merging =
+    !!opts.merge && opts.merge === s.mergeKey && (gestureActive || now - s.mergeTime < MERGE_MS);
   const past = merging ? s.past : [...s.past, { doc: s.doc, selection: s.selection }].slice(-MAX_HISTORY);
   // drop selection of deleted nodes
   const ids = new Set(doc.nodes.map((n) => n.id));
@@ -171,8 +174,17 @@ export function commit(doc: SdfDoc, opts: { merge?: string; selection?: string[]
   });
 }
 
+/**
+ * A pointer gesture (drag) starts: everything until endMerge() with the same
+ * merge key is one undo step, even if the machine or the user is slow.
+ */
+export function beginGesture() {
+  gestureActive = true;
+}
+
 /** End a merge group (e.g. on pointer up) so the next change is a new undo step. */
 export function endMerge() {
+  gestureActive = false;
   set({ mergeKey: null });
 }
 

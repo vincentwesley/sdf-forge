@@ -175,16 +175,20 @@ export function addShapeToScene(
   if (def.transform === 3) params.position = pos;
   if (def.colored) params.color = mode === 'carve' ? [0.85, 0.85, 0.82] : nextColor(doc);
   if (def.output === 'sdf2') {
-    // a flat profile from the toolbar: stand it up as an extruded plate facing the camera
+    // a flat profile from the toolbar: stand it up as an extruded plate facing the camera;
+    // a drawn Profile starts as a vase silhouette, so it is spun with Revolve instead
     const ys = doc.nodes.map((n) => n.y);
     const xs = doc.nodes.map((n) => n.x);
     const profile = makeNode(type, Math.min(...xs) - 260, Math.max(...ys) + 120, params);
-    const ex = makeNode('extrude', Math.min(...xs), Math.max(...ys) + 120, {
-      height: 0.3,
-      rounding: 0.04,
-      position: pos,
-      rotation: [90, 0, 0],
-    });
+    const ex =
+      type === 'profile'
+        ? makeNode('revolve', Math.min(...xs), Math.max(...ys) + 120, { offset: 0, position: pos })
+        : makeNode('extrude', Math.min(...xs), Math.max(...ys) + 120, {
+            height: 0.3,
+            rounding: 0.04,
+            position: pos,
+            rotation: [90, 0, 0],
+          });
     const withProfile = connect(addNode(addNode(doc, profile), ex), profile.id, ex.id, 'profile');
     const r = addShapeToScene(withProfile, '__existing__' + ex.id, { ...opts });
     return { doc: r.doc, nodeId: profile.id };

@@ -20,6 +20,7 @@ import {
   actions,
   connectNodes,
   deleteNodes,
+  beginGesture,
   endMerge,
   moveNodes,
   removeEdges,
@@ -263,6 +264,7 @@ function Flow() {
         onReconnectEnd={onReconnectEnd}
         edgesReconnectable
         isValidConnection={isValidConnection}
+        onNodeDragStart={() => beginGesture()}
         onNodeDragStop={() => endMerge()}
         onPaneContextMenu={(e) => {
           e.preventDefault();

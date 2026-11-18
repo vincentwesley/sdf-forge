@@ -1,4 +1,5 @@
 import { defaultParams, getDef, paramsOf } from '../nodes/registry';
+import { sanitizePoints } from '../profile';
 import type { Dim, ParamValue } from '../nodes/types';
 
 export interface GNode {
@@ -209,6 +210,9 @@ export function normalizeDoc(raw: unknown): SdfDoc {
         if (Array.isArray(v) && v.length === 3 && v.every((x) => Number.isFinite(x))) params[p.key] = [...v];
       } else if (p.kind === 'vec2') {
         if (Array.isArray(v) && v.length === 2 && v.every((x) => Number.isFinite(x))) params[p.key] = [...v];
+      } else if (p.kind === 'points') {
+        const pts = sanitizePoints(v);
+        if (pts) params[p.key] = pts;
       } else if (p.kind === 'enum') {
         if (p.options.some((o) => o.value === v)) params[p.key] = v;
       } else if (p.kind === 'bool') {

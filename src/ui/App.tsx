@@ -111,6 +111,8 @@ const MODE_KEYS: Record<string, ViewMode> = { '1': 'shaded', '2': 'print', '3': 
 function useShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // a widget already handled this key (e.g. Delete removes a point in the outline editor)
+      if (e.defaultPrevented) return;
       const t = e.target as HTMLElement;
       const typing = t.matches(
         'input:not([type=range]):not([type=checkbox]):not([type=color]), textarea, select, [contenteditable]',

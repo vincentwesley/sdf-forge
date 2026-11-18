@@ -40,8 +40,9 @@ export const testApi = {
       dialog: s.dialog,
     };
   },
-  /** Number of distinct colours in a small render of the current view (0 = blank). */
+  /** True once the studio reflection map is loaded. */
   environment: () => getActiveRenderer()?.hasEnvironment ?? false,
+  /** Number of distinct colours in a small render of the current view (0 = blank). */
   pixelVariety: () => {
     const r = getActiveRenderer();
     if (!r) return 0;

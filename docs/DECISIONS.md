@@ -81,3 +81,9 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     on the wire. RGB9E5 is filterable in core WebGL2, so no extensions are needed. The map turns with the key light,
     so the brightest softbox and the shadow-casting light agree. A little of the background gradient is added so flat
     faces that see the studio's dark walls still read.
+19. **Profile points are a flat `[x, y, sharp, …]` list; their positions are uniforms and their count is structural**
+    (vs. a spline evaluated in the shader, or a new structured param type). Smooth runs are Catmull-Rom curves
+    sampled on the CPU into a polygon (8 edges per curved segment), and the shader evaluates Inigo Quilez's exact
+    polygon distance over that polygon. Dragging a point never recompiles; only adding or removing points, or
+    switching a point between sharp and smooth, changes the code. A flat number list fits the existing `ParamValue`,
+    share links and history unchanged. At most 16 points, so the unrolled shader stays small.

@@ -26,7 +26,7 @@ export function inlineParams(glsl: string, P: Float32Array): string {
 }
 
 const QUICK_SHAPES = ['sphere', 'box', 'cylinder', 'torus', 'capsule', 'cone'];
-const MORE_SHAPES = ['text', 'ellipsoid', 'octahedron', 'hexPrism', 'link'];
+const MORE_SHAPES = ['profile', 'text', 'ellipsoid', 'octahedron', 'hexPrism', 'link'];
 
 const MODES: { id: ViewMode; label: string; hint: string }[] = [
   { id: 'shaded', label: 'Shaded', hint: 'Lit preview with colours' },
