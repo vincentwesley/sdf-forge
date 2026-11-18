@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
-import { EXAMPLES, type Example } from '../../gallery/examples';
-import { actions, loadDoc, toast } from '../../state/store';
+import { EXAMPLES } from '../../gallery/examples';
+import { openExample } from '../../gallery/open';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -17,12 +17,6 @@ const TAG_LABEL: Record<string, string> = {
   art: 'Art',
   learn: 'Learn',
 };
-
-export function openExample(ex: Example) {
-  loadDoc(ex.build(), { keepHistory: true });
-  actions.set({ dialog: null });
-  toast(`Opened “${ex.title}”. Ctrl+Z goes back to what you had.`, 'info');
-}
 
 export function GalleryDialog() {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]['id']>('all');

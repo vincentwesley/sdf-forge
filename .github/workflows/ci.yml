@@ -17,8 +17,8 @@ jobs:
     name: Lint, typecheck, unit tests, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -28,7 +28,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: node scripts/check-dist.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: dist
           path: dist
@@ -38,12 +38,12 @@ jobs:
     name: Mesh export validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - run: npm ci
@@ -54,7 +54,7 @@ jobs:
         run: python scripts/validate_meshes.py artifacts/meshes
       - name: glTF validity (Khronos glTF-Validator)
         run: node scripts/validate-gltf.mjs artifacts/meshes
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: meshes
@@ -65,8 +65,8 @@ jobs:
     name: Browser tests (Playwright, software WebGL)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -74,7 +74,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build
       - run: npm run e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: playwright-report
