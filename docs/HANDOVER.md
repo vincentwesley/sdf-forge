@@ -47,10 +47,50 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 | M6 picking, gizmo, learning, render/video/code export | done |
 | M7 e2e, screenshots, a11y, fps; polish passes; usability | done (48 browser tests; two polish passes; USABILITY.md) |
 | Next idea from the brainstorm: Text node | done |
-| M8 README, PR, merge, deploy, verify live | in progress |
+| M8 README, PR, merge, deploy, verify live | merged (PR #1); deploy blocked until Pages is enabled — see NEEDS-VIN.md |
 
-## Known issues / next steps
+## Next session: where to pick up
 
-See the bottom of this file once the project is finished; during work, the task list is:
-1. Polish passes (design, wording, performance, edge cases, mobile) and the three usability walkthroughs.
-2. README with screenshots + GIF, then the PR → merge → deploy → verify live.
+1. If the live site is up (Vin enabled Pages), run `node scripts/check-live.mjs` and open it at phone, tablet and
+   desktop widths; then tick A21 in the lists below.
+2. Ideas left in the brainstorm (DECISIONS.md), most valuable first: Shadertoy export for text (embed the grid as
+   a texture channel note or const array), parameter animation over time, node groups / sub-graphs, a spline profile
+   editor for Revolve, 3MF export, a WGSL/WebGPU back end from the same IR.
+3. Each change: `npm run acceptance` (everything) or at least lint + typecheck + unit + build, then push to the
+   working branch, open a PR into `main` and merge once CI is green.
+
+---
+
+## Final status (end of the first build, 2026-11-18)
+
+### Done and verified
+
+* Live URL: **<https://vincentwesley.github.io/sdf-forge/>** — goes live as soon as Pages is enabled (see below);
+  the same production build was verified locally from the `/sdf-forge/` subpath at 390×844, 820×1180 and 1440×900.
+* Everything in `docs/ACCEPTANCE.md` A1–A20 passes **from a fresh clone** (`npm run acceptance`) and in CI on the
+  final commit (lint, typecheck, 117 unit tests, build + dist checks, 63 meshes validated with trimesh, 21 GLBs
+  with the Khronos validator, 48 Playwright tests incl. GPU/CPU agreement, a11y, screenshots, frame rate).
+* Editor: 34 node types (incl. Text), toolbar add/carve, picking + move gizmo, inspector in mm with explanations,
+  graph with compatible-node search, copy/paste, command palette, undo/redo, autosave, tour, light/dark, responsive
+  phone/tablet/desktop layouts, keyboard support, reduced motion.
+* Exports: STL/GLB/OBJ (watertight, manifold, sized in mm, credited), PNG up to 4K, MP4/WebM turntable,
+  Shadertoy/GLSL code. Share links and graph files.
+* Gallery: 16 examples incl. 6 printable templates whose Controls are tested across their ranges.
+* Docs: README (screenshots, GIF, live link), RESEARCH, PLAN, DECISIONS, ACCEPTANCE, USABILITY (three
+  walkthroughs, all friction points fixed or recorded), CHANGELOG, CONTRIBUTING, SECURITY, MIT licence
+  (© 2026 Vin's Atelier).
+
+### Not done, and why
+
+* **Live site not yet reachable** — GitHub Pages is not enabled on the repository and the workflow token may not
+  enable it (tried). One settings click by Vin fixes it (NEEDS-VIN.md §1). A21 (`check-live.mjs`) therefore not
+  yet run against the live URL.
+* Shadertoy export for shapes containing Text (needs a texture channel; the code tab explains this).
+* Parameter animation, node groups, spline profile editor, sculpt brushes, image-based materials, 3MF, WebGPU:
+  recorded as "Later" in DECISIONS.md with reasons; a smaller polished feature set was preferred.
+
+### What needs Vin
+
+* Enable GitHub Pages (source: GitHub Actions) and re-run the deploy workflow — exact steps in
+  `docs/NEEDS-VIN.md` §1.
+* Optional: social preview image, About box, private vulnerability reporting (NEEDS-VIN.md §2).
