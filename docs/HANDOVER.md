@@ -12,7 +12,7 @@ Living document: read this first when resuming work on SDF Forge.
 
 ## Architecture in one minute
 
-`src/core` is DOM-free TypeScript: `ir/` (typed expression IR → GLSL and scalar JS), `nodes/` (33 node definitions
+`src/core` is DOM-free TypeScript: `ir/` (typed expression IR → GLSL and scalar JS), `nodes/` (34 node definitions
 with emit/bounds/Lipschitz/help), `graph/` (document model, validation, auto layout), `compile.ts` (graph → shader +
 CPU evaluator + param slots), `mesh/` (Manifold level-set meshing and STL/GLB/OBJ writers), `share.ts` (links).
 `src/render` is the WebGL2 ray marcher; `src/ui` the React app (xyflow graph, inspector, dialogs); `src/state` the
@@ -45,8 +45,9 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 | M4 mesh export + validation | done (63 meshes pass trimesh, GLBs pass Khronos validator) |
 | M5 share links, gallery, templates, Controls | done (16 examples, 6 printable templates with Controls) |
 | M6 picking, gizmo, learning, render/video/code export | done |
-| M7 e2e, screenshots, a11y, fps; polish passes; usability | in progress |
-| M8 README, PR, merge, deploy, verify live | not started |
+| M7 e2e, screenshots, a11y, fps; polish passes; usability | done (48 browser tests; two polish passes; USABILITY.md) |
+| Next idea from the brainstorm: Text node | done |
+| M8 README, PR, merge, deploy, verify live | in progress |
 
 ## Known issues / next steps
 

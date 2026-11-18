@@ -13,7 +13,7 @@ All notable changes to SDF Forge are documented here. The format follows
 ## [1.0.0] - 2026-11-18
 
 ### Added
-- Node graph editor (React Flow) with 33 node types: 10 primitives, 4 2D profiles, union / subtract / intersect / morph
+- Node graph editor (React Flow) with 34 node types: 10 primitives, 5 2D profiles (including Text), union / subtract / intersect / morph
   with smooth blending, transform, twist, bend, repeat, radial repeat, mirror, elongate, shell (with open top/bottom),
   inflate, displace (noise and waves), lattice (gyroid, Schwarz P, diamond), cut, extrude and revolve.
 - Graph compiler: one typed expression IR generates both GLSL (WebGL2 ray marcher) and allocation-free JavaScript

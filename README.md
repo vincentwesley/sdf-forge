@@ -22,7 +22,7 @@ Made by **Vin** · **Vin's Atelier**.
 - **Start in seconds.** The page opens on a shape you can spin, click and drag. Add shapes from the toolbar (or
   switch to *Carve* to cut holes), move them with the arrows, and blend them like clay. A one-minute tour and a
   plain-language explanation of every node are built in.
-- **Go deep when you want to.** 33 node types in a real graph editor: drag a wire into empty space to get a list of
+- **Go deep when you want to.** 34 node types in a real graph editor: drag a wire into empty space to get a list of
   compatible nodes, right-click to add, view any node on its own, copy/paste between tabs, a command palette
   (`Ctrl/⌘ K`), undo/redo, and number fields that accept arithmetic.
 - **Make real things.**
@@ -30,7 +30,7 @@ Made by **Vin** · **Vin's Atelier**.
     A *Print check* view paints walls thinner than your nozzle red and steep overhangs orange.
   - **GLB** (glTF 2.0) with normals and vertex colours, and **OBJ**, for Blender, game engines and the web.
   - **PNG** renders up to 4K (transparent background optional) and **turntable videos** (MP4 or WebM).
-  - **Shader code** — a complete Shadertoy shader or just the GLSL distance function.
+  - **Shader code** — a complete Shadertoy shader or just the GLSL distance function (not yet for shapes with text).
 - **Write on things.** A Text node turns any word into a profile: extrude it into a sign or name tag, or subtract
   it to engrave.
 - **Customise templates.** Pin any setting to the *Controls* panel. Printable templates (vase, planter, keychain,

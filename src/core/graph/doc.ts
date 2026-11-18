@@ -214,7 +214,11 @@ export function normalizeDoc(raw: unknown): SdfDoc {
       } else if (p.kind === 'bool') {
         params[p.key] = !!v;
       } else if (p.kind === 'text') {
-        if (typeof v === 'string') params[p.key] = [...v].filter((ch) => ch >= ' ').join('').slice(0, p.maxLength);
+        if (typeof v === 'string')
+          params[p.key] = [...v]
+            .filter((ch) => ch >= ' ')
+            .join('')
+            .slice(0, p.maxLength);
       } else if (typeof v === 'number' && Number.isFinite(v)) {
         params[p.key] = v;
       }
