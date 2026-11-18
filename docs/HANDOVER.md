@@ -52,14 +52,29 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 ## Next session: where to pick up
 
 1. The site is live and deploys on every push to `main`. After a merge, `node scripts/check-live.mjs` confirms it.
-2. Ideas left in the brainstorm (DECISIONS.md), most valuable first: Shadertoy export for text (embed the grid as
-   a texture channel note or const array), parameter animation over time, node groups / sub-graphs, a WGSL/WebGPU
-   back end from the same IR. Done since the first build: 3MF export, studio reflections, the Profile (drawn
-   outline) node — see CHANGELOG.md.
+2. Ideas left in the brainstorm (DECISIONS.md), most valuable first: node groups / sub-graphs, Shadertoy export
+   for text (embed the grid as a texture channel note or const array), a WGSL/WebGPU back end from the same IR.
+   Done since the first build (PRs #3–#8): 3MF export, studio reflections, the Profile (drawn outline) node,
+   animated Controls. See CHANGELOG.md.
 3. Each change: `npm run acceptance` (everything) or at least lint + typecheck + unit + build, then push to the
    working branch, open a PR into `main` and merge once CI is green.
 
 ---
+
+## Session 2 (2026-11-18): added after the first build
+
+All merged through PRs #3–#8, with CI green on each, then deployed and checked live.
+* **3MF export** (#5): millimetres, a palette of the shapes' own colours, credit metadata and a thumbnail.
+  Validated in CI by trimesh and lib3mf (strict).
+* **Studio reflections** (#6, fix #7): a CC0 Poly Haven HDRI, pre-filtered into a 44 KB RGB9E5 mip chain. A
+  regression test checks it survives resizes.
+* **Profile node** (#8): a point editor (mouse, touch and keyboard) with sharp and smooth points, plus the
+  *Chess pawn* and *Shelf bracket* examples. Tested against a brute-force polygon distance and Pappus's theorem.
+* **Animated Controls** (#8): a Play button in the view, animated turntable videos, animations in share links.
+* Fixes: a drag is always one undo step; keys handled by a widget skip the app shortcuts; the theme is applied
+  before first paint; the GitHub Actions run on Node 24.
+* **Free 3D resources** vetted for licences: `docs/RESOURCES.md` (CC0 first, with the risks spelled out).
+* Totals now: 35 node types, 18 examples, 140 unit tests, 55 Playwright tests, 23 shapes × 4 formats (92 meshes) validated.
 
 ## Final status (end of the first build, 2026-11-18)
 
@@ -84,8 +99,8 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 ### Not done, and why
 
 * Shadertoy export for shapes containing Text (needs a texture channel; the code tab explains this).
-* Parameter animation, node groups, spline profile editor, sculpt brushes, image-based materials, 3MF, WebGPU:
-  recorded as "Later" in DECISIONS.md with reasons; a smaller polished feature set was preferred.
+* Node groups, sculpt brushes, image-based materials, WebGPU: recorded as "Later" in DECISIONS.md with reasons.
+  (Parameter animation, the profile editor and 3MF were built in session 2.)
 
 ### What needs Vin
 

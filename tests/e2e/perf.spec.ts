@@ -9,31 +9,45 @@ test('stays interactive during orbit with software rendering', async ({ page }) 
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1280, height: 800 });
   await openApp(page);
+  // a real pointer drag orbits the camera
   const canvas = page.getByTestId('viewport-canvas');
   const b = (await canvas.boundingBox())!;
+  const yaw0 = (await page.evaluate(() => window.sdfForge.camera())).yaw;
   await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
   await page.mouse.down();
-  // warm up so the dynamic resolution settles
-  for (let i = 0; i < 30; i++)
-    await page.mouse.move(b.x + b.width / 2 + (i % 20) * 4, b.y + b.height / 2, { steps: 1 });
-  const f0 = (await page.evaluate(() => window.sdfForge.rendererStats()))!.frames;
-  const t0 = Date.now();
-  let i = 0;
-  while (Date.now() - t0 < 3000) {
-    i++;
-    await page.mouse.move(
-      b.x + b.width / 2 + Math.sin(i / 5) * 120,
-      b.y + b.height / 2 + Math.cos(i / 7) * 40,
-      { steps: 1 },
-    );
-  }
-  const stats = (await page.evaluate(() => window.sdfForge.rendererStats()))!;
+  for (let i = 1; i <= 10; i++) await page.mouse.move(b.x + b.width / 2 + i * 8, b.y + b.height / 2);
   await page.mouse.up();
-  const fps = ((stats.frames - f0) * 1000) / (Date.now() - t0);
-  console.log(
-    `orbiting: ${fps.toFixed(1)} frames/s at render scale ${stats.scale.toFixed(2)} (${stats.width}x${stats.height})`,
+  expect((await page.evaluate(() => window.sdfForge.camera())).yaw).not.toBeCloseTo(yaw0, 3);
+  // Measure the renderer, not the test harness: orbit from inside the page on every
+  // animation frame (as a fast drag would), so slow input round trips on a busy CI
+  // machine cannot cap the count. Warm up first so the dynamic resolution settles.
+  const result = await page.evaluate(
+    () =>
+      new Promise<{ fps: number; scale: number; w: number; h: number }>((resolve) => {
+        const api = window.sdfForge;
+        let yaw = api.camera().yaw;
+        let f0 = 0,
+          t0 = 0;
+        const start = performance.now();
+        const step = (now: number) => {
+          yaw += 0.02;
+          api.setCamera({ yaw });
+          if (!t0 && now - start > 1500) {
+            t0 = now;
+            f0 = api.rendererStats()!.frames;
+          }
+          if (t0 && now - t0 > 3000) {
+            const s = api.rendererStats()!;
+            resolve({ fps: ((s.frames - f0) * 1000) / (now - t0), scale: s.scale, w: s.width, h: s.height });
+          } else requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }),
   );
-  expect(fps).toBeGreaterThan(20);
+  console.log(
+    `orbiting: ${result.fps.toFixed(1)} frames/s at render scale ${result.scale.toFixed(2)} (${result.w}x${result.h})`,
+  );
+  expect(result.fps).toBeGreaterThan(20);
 });
 
 test.describe.configure({ mode: 'serial' });
