@@ -7,7 +7,9 @@ import { normalizeDoc, type SdfDoc } from './core/graph/doc';
 import { gpuEvaluate } from './render/probe';
 import { getActiveRenderer } from './render/registry';
 import { EXAMPLES, exampleById } from './gallery/examples';
-import { loadDoc, store } from './state/store';
+import { commit, loadDoc, store } from './state/store';
+
+const loadDocKeep = (d: SdfDoc) => commit(d);
 import { encodeDoc, decodeDoc } from './core/share';
 import { exportMesh } from './workers/meshClient';
 import type { MeshFormat } from './core/mesh/pipeline';
@@ -97,6 +99,16 @@ export const testApi = {
       cpuColor,
       bounds: sceneFor(normalizeDoc(doc)).a.bounds,
     };
+  },
+  setCamera: (c: Partial<ReturnType<typeof store.getState>['camera']>) =>
+    store.setState({ camera: { ...store.getState().camera, ...c } }),
+  camera: () => store.getState().camera,
+  setParam: (node: string, key: string, value: number | number[]) => {
+    const s = store.getState();
+    loadDocKeep({
+      ...s.doc,
+      nodes: s.doc.nodes.map((n) => (n.id === node ? { ...n, params: { ...n.params, [key]: value } } : n)),
+    });
   },
   shadertoy: () => shadertoySource(store.getState().doc),
   encode: (d: SdfDoc) => encodeDoc(d),
