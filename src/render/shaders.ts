@@ -19,6 +19,7 @@ export function fragmentSource(scene: string, paramVec4s: number): string {
   return /* glsl */ `#version 300 es
 precision highp float;
 precision highp int;
+#define ENV_GAIN 0.9
 
 uniform vec4 uP[${Math.max(1, paramVec4s)}];
 uniform vec2 uRes;
@@ -45,6 +46,9 @@ uniform float uThinLimit;
 uniform float uShadowQuality; // 0 = fast, 1 = full
 uniform float uTransparentBg;
 uniform float uFrame;
+uniform sampler2D uEnv;    // pre-filtered studio reflections (RGB9E5 mip chain)
+uniform float uEnvOn;
+uniform float uEnvYaw;
 
 out vec4 outColor;
 
@@ -157,6 +161,15 @@ vec3 toneMap(vec3 color) {
   return mix(color, newPeak * vec3(1.0), g);
 }
 
+// Studio environment: equirectangular, level k blurred for roughness k/5.
+// Turned with the key light so its brightest softbox matches the key.
+vec3 envMap(vec3 d, float lod) {
+  float c = cos(uEnvYaw), s = sin(uEnvYaw);
+  vec3 e = vec3(c * d.x - s * d.z, d.y, s * d.x + c * d.z);
+  vec2 uv = vec2(atan(e.z, e.x) * 0.15915494 + 0.5, acos(clamp(e.y, -1.0, 1.0)) * 0.31830989);
+  return textureLod(uEnv, uv, lod).rgb;
+}
+
 vec3 shade(vec3 p, vec3 rd, float t) {
   vec3 n = calcNormal(p, t);
   vec4 mc = mapColor(p);
@@ -207,8 +220,17 @@ vec3 shade(vec3 p, vec3 rd, float t) {
   col += (diff * 0.3 + F0) * rim * ao * 0.35;
   // environment reflection for glossy/metal
   vec3 r = reflect(rd, n);
-  vec3 env = mix(uBgBottom, uBgTop, clamp(r.y * 0.5 + 0.5, 0.0, 1.0)) * 1.4 + vec3(smoothstep(0.6, 0.95, r.y)) * 0.6;
-  col += env * F * ao * (1.0 - rough) * 0.9;
+  if (uEnvOn > 0.5) {
+    // Schlick fresnel on n·v (the reflection direction, not the key light's half vector)
+    vec3 Fr = F0 + (1.0 - F0) * pow(1.0 - ndv, 5.0) * (1.0 - rough * 0.7);
+    // studio map plus a soft fill from the background gradient, so flat faces that
+    // face the studio's dark walls still read
+    vec3 fill = mix(uBgBottom, uBgTop, clamp(r.y * 0.5 + 0.5, 0.0, 1.0)) * 0.45;
+    col += (envMap(r, rough * 5.0) * ENV_GAIN + fill) * Fr * ao;
+  } else {
+    vec3 env = mix(uBgBottom, uBgTop, clamp(r.y * 0.5 + 0.5, 0.0, 1.0)) * 1.4 + vec3(smoothstep(0.6, 0.95, r.y)) * 0.6;
+    col += env * F * ao * (1.0 - rough) * 0.9;
+  }
   if (uMaterial == 1) {
     // glossy: a clear-coat style sharp highlight of the key light
     float cc = pow(ndh, 220.0) * 6.0 * sh;

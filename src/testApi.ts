@@ -41,6 +41,7 @@ export const testApi = {
     };
   },
   /** Number of distinct colours in a small render of the current view (0 = blank). */
+  environment: () => getActiveRenderer()?.hasEnvironment ?? false,
   pixelVariety: () => {
     const r = getActiveRenderer();
     if (!r) return 0;
