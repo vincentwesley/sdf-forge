@@ -1,0 +1,10 @@
+{
+  "name": "SDF Forge",
+  "short_name": "SDF Forge",
+  "description": "Node-based signed distance function modeller by Vin's Atelier",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f1012",
+  "theme_color": "#17181b",
+  "icons": [{ "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
