@@ -18,7 +18,7 @@ import {
 import { getScene } from '../state/scene';
 import { surpriseMe } from '../state/surprise';
 import { startTour } from './Tour';
-import { openExample } from './dialogs/GalleryDialog';
+import { openExample } from '../gallery/open';
 
 interface Cmd {
   id: string;
