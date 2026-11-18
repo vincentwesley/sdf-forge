@@ -1,6 +1,6 @@
 /**
- * Export every gallery example plus analytic reference shapes as STL, GLB and
- * OBJ using exactly the same pipeline as the website's export worker, and
+ * Export every gallery example plus analytic reference shapes as STL, 3MF, GLB
+ * and OBJ using exactly the same pipeline as the website's export worker, and
  * write a manifest with the expected size and volume of each.
  *
  * Usage: npx tsx scripts/export-meshes.ts [outDir] [--cells N] [--only id,id]
@@ -16,7 +16,7 @@ import { type SdfDoc } from '../src/core/graph/doc';
 import { EXAMPLES } from '../src/gallery/examples';
 import { DocBuilder } from '../src/gallery/builder';
 import { edgeForQuality, type ManifoldModule } from '../src/core/mesh/mesh';
-import { runExport, type MeshFormat } from '../src/core/mesh/pipeline';
+import { runExport, shapeColors, type MeshFormat } from '../src/core/mesh/pipeline';
 import type { AABB } from '../src/core/nodes/types';
 
 const args = process.argv.slice(2);
@@ -134,10 +134,18 @@ async function main() {
       sizeSource: c.size ? 'analytic' : 'sampled',
       files: {},
     };
-    for (const format of ['stl', 'glb', 'obj'] as MeshFormat[]) {
-      const out = runExport(
+    for (const format of ['stl', '3mf', 'glb', 'obj'] as MeshFormat[]) {
+      const out = await runExport(
         wasm,
-        { ...comp, P, bounds, title: c.doc.title, mmPerUnit: mm, material: c.doc.settings.material },
+        {
+          ...comp,
+          P,
+          bounds,
+          title: c.doc.title,
+          mmPerUnit: mm,
+          material: c.doc.settings.material,
+          palette: shapeColors(c.doc, comp.leaves),
+        },
         { format, edgeLength: edge },
       );
       const file = `${c.id}.${out.ext}`;

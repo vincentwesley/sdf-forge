@@ -1,10 +1,12 @@
 """Validate exported meshes with trimesh (https://trimesh.org, MIT).
 
-For every case in manifest.json and every format (STL, GLB, OBJ):
+For every case in manifest.json and every format (STL, 3MF, GLB, OBJ):
   * the file loads,
   * the mesh is watertight, winding-consistent and a valid volume (manifold),
   * the volume matches the expected volume (analytic or Monte Carlo) within tolerance,
-  * the bounding-box size matches the expected size within the meshing resolution.
+  * the bounding-box size matches the expected size within the meshing resolution,
+  * 3MF files also load without errors or warnings in lib3mf, the 3MF Consortium's
+    reference implementation (BSD-2-Clause), and declare millimetres.
 
 Usage: python scripts/validate_meshes.py artifacts/meshes
 Exit code is non-zero if anything fails.
@@ -14,8 +16,40 @@ import json
 import sys
 from pathlib import Path
 
+import lib3mf
 import numpy as np
 import trimesh
+
+_LIB3MF = lib3mf.get_wrapper()
+
+
+def check_3mf(path: Path) -> list[str]:
+    """Read with the reference implementation; return a list of problems."""
+    problems = []
+    model = _LIB3MF.CreateModel()
+    reader = model.QueryReader("3mf")
+    reader.SetStrictModeActive(True)
+    try:
+        reader.ReadFromFile(str(path))
+    except Exception as exc:  # noqa: BLE001
+        return [f"lib3mf could not read it ({exc})"]
+    for i in range(reader.GetWarningCount()):
+        code, msg = reader.GetWarning(i)
+        problems.append(f"lib3mf warning {code}: {msg}")
+    if model.GetUnit() != lib3mf.ModelUnit.MilliMeter:
+        problems.append("unit is not millimetre")
+    objs = model.GetMeshObjects()
+    count = 0
+    while objs.MoveNext():
+        mesh = objs.GetCurrentMeshObject()
+        count += 1
+        if mesh.GetTriangleCount() == 0:
+            problems.append("empty mesh object")
+        if not mesh.IsManifoldAndOriented():
+            problems.append("lib3mf: mesh is not manifold and oriented")
+    if count != 1:
+        problems.append(f"expected 1 mesh object, found {count}")
+    return problems
 
 
 def load(path: Path) -> trimesh.Trimesh:
@@ -28,7 +62,7 @@ def load(path: Path) -> trimesh.Trimesh:
 def scene_axes_size(mesh: trimesh.Trimesh, fmt: str, mm_per_unit: float) -> np.ndarray:
     """Return the bounding box size in millimetres along the scene's x, y, z axes."""
     ext = mesh.bounding_box.extents
-    if fmt == "stl":  # Z-up millimetres: scene (x, y, z) -> file (x, -z, y)
+    if fmt in ("stl", "3mf"):  # Z-up millimetres: scene (x, y, z) -> file (x, -z, y)
         return np.array([ext[0], ext[2], ext[1]])
     if fmt == "glb":  # Y-up metres
         return ext * 1000.0
@@ -54,7 +88,7 @@ def main(root: str) -> int:
             except Exception as exc:  # noqa: BLE001
                 failures.append(f"{name}: failed to load ({exc})")
                 continue
-            problems = []
+            problems = check_3mf(path) if fmt == "3mf" else []
             if not mesh.is_watertight:
                 problems.append("not watertight")
             if not mesh.is_winding_consistent:

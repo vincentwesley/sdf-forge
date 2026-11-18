@@ -1,2 +1,7 @@
 trimesh==5.2.1
 numpy>=1.26
+# 3MF loading in trimesh
+lxml==6.1.3
+networkx==3.7
+# 3MF Consortium reference reader
+lib3mf==2.5.0

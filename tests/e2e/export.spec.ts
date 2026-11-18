@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect, openApp } from './fixtures';
+import { unzip } from '../unzip';
 
 test('export STL: watertight result, correct header and size', async ({ page }) => {
   test.setTimeout(120_000);
@@ -29,6 +30,29 @@ test('export STL: watertight result, correct header and size', async ({ page }) 
     for (let v = 0; v < 3; v++)
       for (let k = 0; k < 3; k++) max = Math.max(max, buf.readFloatLE(84 + t * 50 + 12 + v * 12 + k * 4));
   expect(max).toBeGreaterThan(30);
+  await expect(dlg.getByTestId('export-result')).toContainText('Watertight and manifold');
+});
+
+test('export 3MF: zip package with millimetres, shape colours, credit and a preview image', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await openApp(page);
+  await page.getByTestId('open-export').click();
+  const dlg = page.getByTestId('export-dialog');
+  await dlg.getByRole('radio', { name: 'Draft' }).click();
+  await dlg.getByTestId('fmt-3mf').click();
+  await expect(dlg.getByText('Show print check')).toBeVisible();
+  const [file] = await Promise.all([page.waitForEvent('download'), dlg.getByTestId('export-run').click()]);
+  expect(file.suggestedFilename()).toBe('clay-blend.3mf');
+  const files = unzip(new Uint8Array(readFileSync((await file.path())!)));
+  const model = new TextDecoder().decode(files.get('3D/3dmodel.model')!);
+  expect(model).toContain('unit="millimeter"');
+  expect(model).toContain('Vin&apos;s Atelier');
+  // the starter scene has three coloured shapes; the palette is exactly those
+  expect(model.match(/<base /g)).toHaveLength(3);
+  const png = files.get('Metadata/thumbnail.png')!;
+  expect(new TextDecoder('latin1').decode(png.subarray(1, 4))).toBe('PNG');
   await expect(dlg.getByTestId('export-result')).toContainText('Watertight and manifold');
 });
 

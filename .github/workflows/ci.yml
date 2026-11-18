@@ -48,7 +48,7 @@ jobs:
           python-version: '3.12'
       - run: npm ci
       - run: pip install -r scripts/requirements.txt
-      - name: Export every gallery shape and reference shapes (STL, GLB, OBJ)
+      - name: Export every gallery shape and reference shapes (STL, 3MF, GLB, OBJ)
         run: npx tsx scripts/export-meshes.ts artifacts/meshes
       - name: Watertight, manifold, size and volume (trimesh)
         run: python scripts/validate_meshes.py artifacts/meshes

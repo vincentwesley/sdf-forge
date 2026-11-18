@@ -70,3 +70,8 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     and the CPU uses the identical formula. Shadertoy export is not available for graphs with text (it would need a
     texture channel); the code tab says so.
 16. **Extrude maps profile Y to world −Z** so profiles (and text) read correctly when seen from above.
+17. **3MF colours snap to the shapes' own colours** (vs. one colour per vertex, or clustering whatever colours the
+    surface happens to have). Smooth blends create gradients, and a gradient becomes dozens of near-identical
+    "filaments" in a slicer. Each triangle takes the nearest colour set on a shape, so a three-colour model shows
+    three filament slots. Without that list, similar colours are clustered and colours covering under 1 % are folded
+    in. The zip writer is our own (about 100 lines, platform `CompressionStream`), so there's no new dependency.

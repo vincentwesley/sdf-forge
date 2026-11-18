@@ -12,7 +12,7 @@ import { commit, loadDoc, store } from './state/store';
 const loadDocKeep = (d: SdfDoc) => commit(d);
 import { encodeDoc, decodeDoc } from './core/share';
 import { exportMesh } from './workers/meshClient';
-import type { MeshFormat } from './core/mesh/pipeline';
+import { shapeColors, type MeshFormat } from './core/mesh/pipeline';
 import { shadertoySource } from './core/shadertoy';
 
 function sceneFor(doc: SdfDoc) {
@@ -130,6 +130,7 @@ export const testApi = {
         mmPerUnit: s.doc.settings.mmPerUnit,
         material: s.doc.settings.material,
         textures: c.textures,
+        palette: shapeColors(s.doc, c.leaves),
       },
       { format, edgeLength: ext / cells },
     );

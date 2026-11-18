@@ -27,6 +27,7 @@ Made by **Vin** · **Vin's Atelier**.
   (`Ctrl/⌘ K`), undo/redo, and number fields that accept arithmetic.
 - **Make real things.**
   - **STL** for 3D printing — Z-up millimetres, sized with a "longest side" field, with volume and filament estimates.
+  - **3MF** for modern slicers (Bambu Studio, PrusaSlicer, Cura) — millimetres, a colour palette taken from your shapes, credit metadata and a preview image, in a file about a fifth the size of the STL.
     A *Print check* view paints walls thinner than your nozzle red and steep overhangs orange.
   - **GLB** (glTF 2.0) with normals and vertex colours, and **OBJ**, for Blender, game engines and the web.
   - **PNG** renders up to 4K (transparent background optional) and **turntable videos** (MP4 or WebM).
@@ -65,7 +66,7 @@ Everything in [docs/ACCEPTANCE.md](docs/ACCEPTANCE.md) runs in CI on every push:
 
 - unit tests of the compiler against analytic distances, exactness, bounds and step safety;
 - GPU-vs-CPU agreement in headless Chromium (SwiftShader);
-- every gallery shape exported as STL, GLB and OBJ and checked with [trimesh](https://trimesh.org) (watertight,
+- every gallery shape exported as STL, 3MF, GLB and OBJ and checked with [trimesh](https://trimesh.org) (watertight,
   manifold, size, volume) and the [Khronos glTF-Validator](https://github.com/KhronosGroup/glTF-Validator);
 - Playwright tests of every main flow, axe-core accessibility checks in both themes, screenshots at phone/tablet/
   desktop sizes, and a frame-rate check with software rendering.

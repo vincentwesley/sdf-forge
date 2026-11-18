@@ -31,7 +31,7 @@ const STEPS: Step[] = [
   {
     target: '[data-tour="export"]',
     title: 'Take it with you',
-    body: 'Export a watertight STL for 3D printing, a GLB for games and 3D apps, a PNG, a turntable video or the shader code. Share puts the whole recipe in a link.',
+    body: 'Export a watertight STL or 3MF for 3D printing, a GLB for games and 3D apps, a PNG, a turntable video or the shader code. Share puts the whole recipe in a link.',
   },
   {
     target: '[data-tour="gallery"]',

@@ -18,7 +18,7 @@ self.onmessage = async (e: MessageEvent<{ id: number; input: ExportInput; opts: 
   const { id, input, opts } = e.data;
   try {
     const w = await wasm();
-    const out = runExport(w, input, opts);
+    const out = await runExport(w, input, opts);
     (self as unknown as Worker).postMessage({ id, ok: true, out }, [out.bytes]);
   } catch (err) {
     (self as unknown as Worker).postMessage({ id, ok: false, error: (err as Error).message ?? String(err) });
