@@ -33,3 +33,7 @@ npm run meshes                                 # export + validate every gallery
 
 TypeScript strict mode, Prettier formatting, ESLint. Keep the `core/` folder free of DOM code so it can run in workers
 and Node.
+
+## Outside assets
+
+Before adding any texture, HDRI, model, font or code from elsewhere, read [docs/RESOURCES.md](docs/RESOURCES.md). Prefer CC0, never add NC/ND/GPL files, and record the source and licence in `public/CREDITS.md`.

@@ -6,7 +6,7 @@ Living document: read this first when resuming work on SDF Forge.
 
 * Branch: `ccr-920c777e-aq16kx` (all work), to be merged into `main` through one pull request at the end.
   GitHub Pages deploys only from `main` (`.github/workflows/deploy.yml`).
-* Plan: `docs/PLAN.md` · Decisions and brainstorm verdicts: `docs/DECISIONS.md` · Research: `docs/RESEARCH.md`
+* Plan: `docs/PLAN.md` · Decisions and brainstorm verdicts: `docs/DECISIONS.md` · Research: `docs/RESEARCH.md` · Safe free 3D resources and licence rules: `docs/RESOURCES.md`
 * Acceptance checks: `docs/ACCEPTANCE.md`, all runnable with `npm run acceptance`.
 * Usability walkthroughs: `docs/USABILITY.md` · Things only Vin can do: `docs/NEEDS-VIN.md`
 
