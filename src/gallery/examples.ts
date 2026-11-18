@@ -203,11 +203,11 @@ export const EXAMPLES: Example[] = [
     build: () => {
       const b = new DocBuilder('Ribbed bowl', { mmPerUnit: 40, material: 'glossy' });
       const s = b.add('sphere', { radius: 1.5, color: C.cream });
-      const w = b.add('displace', { pattern: 'waves', amount: 0.03, scale: 0.5 }, [s], 'Ripples');
+      const foot = b.add('cut', { axis: 'y', offset: -1.3, keep: 'above' }, [s], 'Flat foot');
+      const w = b.add('displace', { pattern: 'waves', amount: 0.03, scale: 0.5 }, [foot], 'Ripples');
       const sh = b.add('shell', { thickness: 0.08, side: 'inside' }, [w]);
       const top = b.add('cut', { axis: 'y', offset: 0.35, keep: 'below' }, [sh], 'Open top');
-      const foot = b.add('cut', { axis: 'y', offset: -1.35, keep: 'above' }, [top], 'Flat foot');
-      b.output(foot)
+      b.output(top)
         .pin(s, 'radius', 'Radius')
         .pin(sh, 'thickness', 'Wall')
         .pin(top, 'offset', 'Rim height')

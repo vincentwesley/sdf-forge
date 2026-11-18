@@ -238,6 +238,8 @@ export function select(ids: string[]) {
 // editing actions (each is one undo step unless merged)
 
 export function setParam(nodeId: string, key: string, value: ParamValue, merge = true) {
+  const cur = get().doc.nodes.find((n) => n.id === nodeId)?.params[key];
+  if (JSON.stringify(cur) === JSON.stringify(value)) return;
   commit(ops.setParam(get().doc, nodeId, key, value), { merge: merge ? `p:${nodeId}:${key}` : undefined });
 }
 

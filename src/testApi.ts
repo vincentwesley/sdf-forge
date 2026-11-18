@@ -37,6 +37,23 @@ export const testApi = {
       dialog: s.dialog,
     };
   },
+  /** Number of distinct colours in a small render of the current view (0 = blank). */
+  pixelVariety: () => {
+    const r = getActiveRenderer();
+    if (!r) return 0;
+    const c = r.renderOffline(96, 64, { frames: 1 });
+    const tmp = document.createElement('canvas');
+    tmp.width = 96;
+    tmp.height = 64;
+    const ctx = tmp.getContext('2d')!;
+    ctx.drawImage(c, 0, 0);
+    r.endOffline();
+    const d = ctx.getImageData(0, 0, 96, 64).data;
+    const set = new Set<number>();
+    for (let i = 0; i < d.length; i += 4)
+      set.add((d[i] >> 3) * 1024 + (d[i + 1] >> 3) * 32 + (d[i + 2] >> 3));
+    return set.size;
+  },
   rendererStats: () => getActiveRenderer()?.stats ?? null,
   compiling: () => getActiveRenderer()?.compiling ?? true,
   setContinuous: (on: boolean) => {

@@ -6,3 +6,4 @@ playwright-report
 artifacts
 docs/media
 *.md
+.venv

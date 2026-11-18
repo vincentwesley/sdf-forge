@@ -23,7 +23,7 @@
   --border-strong: #3a3c43;
   --text: #ececee;
   --text-2: #a7a8b0;
-  --text-3: #85868f;
+  --text-3: #92939c;
   --accent: #ff8a3d;
   --accent-strong: #ff9d5c;
   --accent-text: #ffa066;
@@ -45,7 +45,7 @@
   --border-strong: #c9c9c4;
   --text: #1b1b1e;
   --text-2: #55565d;
-  --text-3: #6b6c73;
+  --text-3: #57585f;
   --accent: #ff8a3d;
   --accent-strong: #f47b2b;
   --accent-text: #b5450b;
@@ -379,7 +379,8 @@ textarea {
   min-height: 24px;
 }
 .segmented button[aria-pressed='true'],
-.segmented button[aria-checked='true'] {
+.segmented button[aria-checked='true'],
+.segmented button[aria-selected='true'] {
   background: var(--panel-3);
   color: var(--text);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);

@@ -58,7 +58,6 @@ export function ExportDialog({ initialTab = 'model' }: { initialTab?: Tab }) {
             type="button"
             role="tab"
             aria-selected={tab === t.id}
-            aria-pressed={tab === t.id}
             aria-controls={`export-${t.id}`}
             id={`export-tab-${t.id}`}
             style={{

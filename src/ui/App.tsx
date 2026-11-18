@@ -32,6 +32,7 @@ function Splitter() {
       aria-label="Resize the graph panel"
       aria-valuemin={10}
       aria-valuemax={90}
+      aria-valuenow={36}
       tabIndex={0}
       onPointerDown={(e) => {
         const el = e.currentTarget;
@@ -63,7 +64,7 @@ function NarrowTabs() {
         type="button"
         role="tab"
         aria-selected={tab === 'graph'}
-        aria-pressed={tab === 'graph'}
+
         onClick={() => actions.set({ narrowTab: 'graph' })}
       >
         Graph
@@ -72,7 +73,7 @@ function NarrowTabs() {
         type="button"
         role="tab"
         aria-selected={tab === 'props'}
-        aria-pressed={tab === 'props'}
+
         onClick={() => actions.set({ narrowTab: 'props' })}
         data-testid="tab-props"
       >

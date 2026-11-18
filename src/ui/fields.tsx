@@ -127,7 +127,8 @@ function NumText({
       }}
       onBlur={() => {
         setEditing(false);
-        apply();
+        if (text !== shown) apply();
+        else onCommit();
       }}
       onChange={(e) => setText(e.target.value)}
       onKeyDown={(e) => {

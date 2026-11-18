@@ -60,6 +60,7 @@ export interface RendererStats {
   height: number;
   compileMs: number;
   renderer: string;
+  frames: number;
 }
 
 /**
@@ -85,6 +86,7 @@ export class Renderer {
   private frame: FrameState | null = null;
   private accumCount = 0;
   private maxAccum = 24;
+  private idleCost = 16;
   private interacting = false;
   private lastInteract = 0;
   private scale = 1;
@@ -108,6 +110,7 @@ export class Renderer {
     height: 0,
     compileMs: 0,
     renderer: '',
+    frames: 0,
   };
   /** When true (tests), always render continuously at the given scale. */
   continuous = false;
@@ -241,14 +244,19 @@ export class Renderer {
   }
 
   setParams(P: Float32Array) {
+    if (this.params.length === P.length && this.params.every((v, i) => v === P[i])) return;
     if (this.params.length !== P.length) this.params = new Float32Array(P.length);
     this.params.set(P);
-    this.reset();
+    // parameter edits (slider drags) are interactions: stay responsive
+    this.interact();
   }
 
   setFrame(f: FrameState) {
+    const prev = this.frame;
     this.frame = f;
-    this.reset();
+    if (prev && JSON.stringify(prev) === JSON.stringify(f)) return;
+    if (prev && prev.camera !== f.camera) this.interact();
+    else this.reset();
   }
 
   /** Mark the view as being interacted with (lower resolution, no accumulation). */
@@ -274,9 +282,16 @@ export class Renderer {
     if (this.pending) this.promotePending();
     const dt = this.lastTime ? time - this.lastTime : 16;
     this.lastTime = time;
-    if (this.interacting && performance.now() - this.lastInteract > 180) {
+    if (this.interacting && performance.now() - this.lastInteract > 220) {
       this.interacting = false;
       this.accumCount = 0;
+    }
+    // On slow devices (software rendering) a full-resolution frame can take
+    // 100 ms+, which would make the page sluggish while it refines. Measure the
+    // idle frame cost and refine less, or at a lower resolution, if needed.
+    if (!this.interacting && this.accumCount === 1 && dt > 0) {
+      this.idleCost = this.idleCost * 0.5 + dt * 0.5;
+      this.maxAccum = this.idleCost > 120 ? 4 : this.idleCost > 60 ? 8 : 24;
     }
     const drawNow =
       this.continuous || this.accumCount < (this.interacting ? 1 : this.maxAccum) || !!this.pending;
@@ -298,7 +313,7 @@ export class Renderer {
     // Only adapt during interaction; when idle we render full quality progressively.
     this.frameMsSmoothed = this.frameMsSmoothed * 0.7 + dt * 0.3;
     if (this.interacting || this.continuous) {
-      if (this.frameMsSmoothed > 24) this.scale = Math.max(0.3, this.scale * 0.85);
+      if (this.frameMsSmoothed > 24) this.scale = Math.max(0.2, this.scale * 0.85);
       else if (this.frameMsSmoothed < 15) this.scale = Math.min(1, this.scale * 1.08);
     }
   }
@@ -323,7 +338,8 @@ export class Renderer {
       return;
     }
     const idle = !this.interacting && !this.continuous;
-    const scale = opts.scale ?? (idle ? 1 : this.scale);
+    const idleScale = this.idleCost > 160 ? 0.7 : 1;
+    const scale = opts.scale ?? (idle ? idleScale : this.scale);
     const w = Math.max(1, Math.round(cw * scale));
     const h = Math.max(1, Math.round(ch * scale));
     this.ensureAccum(w, h);
@@ -349,6 +365,7 @@ export class Renderer {
     gl.disable(gl.BLEND);
     this.accumCount = n + 1;
     this.stats.accumulated = this.accumCount;
+    this.stats.frames++;
 
     // --- display pass ---
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
