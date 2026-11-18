@@ -397,14 +397,96 @@ export const EXAMPLES: Example[] = [
     id: 'morph',
     title: 'Sphere to cube',
     description:
-      'Morph mixes two distance fields. Slide Amount from 0% to 100% to turn a sphere into a cube.',
+      'Morph mixes two distance fields. Press Play (top right of the 3D view) to watch the sphere become a cube, or slide Morph yourself.',
     tags: ['learn'],
     build: () => {
       const b = new DocBuilder('Sphere to cube');
       const s = b.add('sphere', { radius: 1.1, color: C.coral });
       const c = b.add('box', { size: [1.8, 1.8, 1.8], rounding: 0.05, color: C.blue });
       const m = b.add('morph', { amount: 0.5 }, { a: s, b: c });
-      b.output(m).pin(m, 'amount', 'Morph');
+      b.output(m).pin(m, 'amount', 'Morph', { from: 0, to: 1, seconds: 4 });
+      return b.done();
+    },
+  },
+  {
+    id: 'pawn',
+    title: 'Chess pawn',
+    description:
+      'A Profile you draw, spun by Revolve, with a sphere blended on top. Select the Profile node and drag its points to make your own piece.',
+    tags: ['printable', 'game', 'learn'],
+    build: () => {
+      const b = new DocBuilder('Chess pawn', { mmPerUnit: 20, material: 'glossy' });
+      // half silhouette: X = distance from the axis, Y = height; sharp corners on the axis and the collar
+      const body = b.add(
+        'profile',
+        {
+          points: [
+            0, 0, 1, 0.72, 0, 1, 0.72, 0.14, 0, 0.5, 0.3, 0, 0.32, 0.75, 0, 0.24, 1.25, 0, 0.42, 1.35, 1,
+            0.42, 1.45, 1, 0, 1.45, 1,
+          ],
+          rounding: 0.01,
+        },
+        undefined,
+        'Body outline',
+      );
+      const rev = b.add('revolve', { offset: 0, color: C.cream }, [body]);
+      const head = b.add(
+        'sphere',
+        { radius: 0.38, position: [0, 1.78, 0], color: C.cream },
+        undefined,
+        'Head',
+      );
+      const u = b.add('union', { smooth: 0.06 }, [rev, head]);
+      b.output(u).pin(head, 'radius', 'Head size').pin(body, 'rounding', 'Soften');
+      return b.done();
+    },
+  },
+  {
+    id: 'bracket',
+    title: 'Shelf bracket',
+    description:
+      'An L-shaped Profile extruded into a bracket, with two screw holes. Set the width and hole size in Controls; drag the outline’s points to change the arms.',
+    tags: ['printable', 'learn'],
+    build: () => {
+      const b = new DocBuilder('Shelf bracket', { mmPerUnit: 25 });
+      const outline = b.add(
+        'profile',
+        {
+          points: [0, 0, 1, 1.6, 0, 1, 1.6, 0.25, 1, 0.55, 0.25, 0, 0.25, 0.55, 0, 0.25, 1.6, 1, 0, 1.6, 1],
+          rounding: 0.03,
+        },
+        undefined,
+        'L outline',
+      );
+      // stand the outline up facing the camera; Extrude's height is the bracket's width
+      const ex = b.add('extrude', { height: 0.8, rounding: 0.03, rotation: [90, 0, 0], color: C.blue }, [
+        outline,
+      ]);
+      const holeV = b.add(
+        'cylinder',
+        { radius: 0.11, height: 1.2, rounding: 0, position: [1.05, 0, 0], color: C.blue },
+        undefined,
+        'Screw hole (floor)',
+      );
+      const holeH = b.add(
+        'cylinder',
+        {
+          radius: 0.11,
+          height: 1.2,
+          rounding: 0,
+          position: [0, 1.05, 0],
+          rotation: [0, 0, 90],
+          color: C.blue,
+        },
+        undefined,
+        'Screw hole (wall)',
+      );
+      const holes = b.add('union', { smooth: 0 }, [holeV, holeH], 'Screw holes');
+      const cut = b.add('subtract', { smooth: 0.02 }, { base: ex, cutter: holes });
+      b.output(cut)
+        .pin(ex, 'height', 'Width')
+        .pin(holeV, 'radius', 'Hole (floor)')
+        .pin(holeH, 'radius', 'Hole (wall)');
       return b.done();
     },
   },

@@ -5,6 +5,7 @@ import type { AABB, ParamValue } from '../core/nodes/types';
 import { type OrbitCamera, defaultCamera } from '../render/camera';
 import type { ViewMode } from '../render/renderer';
 import * as ops from './ops';
+import type { PinAnim } from '../core/animation';
 import { applyLayout, isTidy } from '../core/graph/layout';
 
 export type ThemePref = 'system' | 'dark' | 'light';
@@ -47,6 +48,8 @@ export interface EditorState {
   camera: OrbitCamera;
   /** bump to request "frame the shape" */
   frameRequest: number;
+  /** animated Controls are playing in the viewport */
+  playing: boolean;
   narrowTab: NarrowTab;
   dialog: DialogId;
   palette: boolean;
@@ -98,6 +101,7 @@ export const store = createStore<EditorState>(() => ({
   theme: 'system',
   camera: defaultCamera(),
   frameRequest: 0,
+  playing: false,
   narrowTab: 'graph',
   dialog: null,
   palette: false,
@@ -146,6 +150,8 @@ store.subscribe((s, prev) => {
 
 const MAX_HISTORY = 200;
 const MERGE_MS = 1200;
+/** While a pointer gesture is held, its changes merge however slowly they arrive. */
+let gestureActive = false;
 
 /**
  * Apply a new document. Changes with the same `merge` key within a short time
@@ -155,7 +161,8 @@ export function commit(doc: SdfDoc, opts: { merge?: string; selection?: string[]
   const s = get();
   if (doc === s.doc) return;
   const now = performance.now();
-  const merging = !!opts.merge && opts.merge === s.mergeKey && now - s.mergeTime < MERGE_MS;
+  const merging =
+    !!opts.merge && opts.merge === s.mergeKey && (gestureActive || now - s.mergeTime < MERGE_MS);
   const past = merging ? s.past : [...s.past, { doc: s.doc, selection: s.selection }].slice(-MAX_HISTORY);
   // drop selection of deleted nodes
   const ids = new Set(doc.nodes.map((n) => n.id));
@@ -171,8 +178,17 @@ export function commit(doc: SdfDoc, opts: { merge?: string; selection?: string[]
   });
 }
 
+/**
+ * A pointer gesture (drag) starts: everything until endMerge() with the same
+ * merge key is one undo step, even if the machine or the user is slow.
+ */
+export function beginGesture() {
+  gestureActive = true;
+}
+
 /** End a merge group (e.g. on pointer up) so the next change is a new undo step. */
 export function endMerge() {
+  gestureActive = false;
   set({ mergeKey: null });
 }
 
@@ -214,6 +230,7 @@ export function loadDoc(doc: SdfDoc, opts: { keepHistory?: boolean; rememberPrev
     viewRoot: null,
     mergeKey: null,
     frameRequest: s.frameRequest + 1,
+    playing: false,
     restorable: opts.rememberPrevious && s.doc.nodes.length > 1 ? s.doc : null,
   });
 }
@@ -371,6 +388,24 @@ export function setPinLabel(node: string, param: string, label: string) {
     },
     { merge: `pinlabel:${node}:${param}` },
   );
+}
+
+/** Set or clear the animation of a pinned Control (one undo step per change). */
+export function setPinAnim(node: string, param: string, anim: PinAnim | null, merge?: string) {
+  const doc = get().doc;
+  const pinned: SdfDoc['pinned'] = doc.pinned.map((p) => {
+    if (p.node !== node || p.param !== param) return p;
+    const next = { ...p };
+    if (anim) next.anim = anim;
+    else delete next.anim;
+    return next;
+  });
+  commit({ ...doc, pinned }, { merge });
+  if (!pinned.some((p) => p.anim)) set({ playing: false });
+}
+
+export function setPlaying(playing: boolean) {
+  set({ playing: playing && get().doc.pinned.some((p) => p.anim) });
 }
 
 export function newDocument() {

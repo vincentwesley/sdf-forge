@@ -1,4 +1,5 @@
 import {
+  PenTool,
   ArrowUpFromLine,
   Blend,
   Box,
@@ -53,6 +54,7 @@ export const NODE_ICONS: Record<string, LucideIcon> = {
   polygon: Pentagon,
   star: Star,
   text: Type,
+  profile: PenTool,
   union: Combine,
   subtract: SquareMinus,
   intersect: SquaresIntersect,

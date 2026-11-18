@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { type RefObject } from 'react';
 import { project, type Vec3 } from '../../render/camera';
-import { endMerge, setParam, useEditor, store } from '../../state/store';
+import { beginGesture, endMerge, setParam, useEditor, store } from '../../state/store';
 import { placementOf, worldDeltaToParam } from './gizmoMath';
 
 const AXES: { key: 'x' | 'y' | 'z'; dir: Vec3; color: string }[] = [
@@ -58,6 +58,7 @@ export function Gizmo({
     el.setPointerCapture(e.pointerId);
     dragging.current = true;
     let last = { x: e.clientX, y: e.clientY };
+    beginGesture();
     const startPos = [...(node.params.position as number[])];
     const total = [0, 0, 0];
     // screen direction of the axis

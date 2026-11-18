@@ -73,8 +73,21 @@ export interface TextParam extends ParamBase {
   default: string;
   maxLength: number;
 }
+/** An editable outline: flat [x, y, sharp, ...] (see src/core/profile.ts). Point count is structural. */
+export interface PointsParam extends ParamBase {
+  kind: 'points';
+  default: number[];
+}
 export type ParamDef =
-  FloatParam | IntParam | Vec3Param | Vec2Param | ColorParam | EnumParam | BoolParam | TextParam;
+  | FloatParam
+  | IntParam
+  | Vec3Param
+  | Vec2Param
+  | ColorParam
+  | EnumParam
+  | BoolParam
+  | TextParam
+  | PointsParam;
 
 export interface InputDef {
   key: string;

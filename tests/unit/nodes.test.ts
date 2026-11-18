@@ -347,3 +347,94 @@ describe('text', () => {
     expect(evaluator(g2.doc).bounds.bounds).toBeNull();
   });
 });
+
+describe('profile (drawn outline)', () => {
+  // an L-shaped, non-convex outline with all sharp corners, plus a smoothed variant
+  const L = [0, 0, 1, 1.2, 0, 1, 1.2, 0.4, 1, 0.5, 0.4, 1, 0.5, 1.4, 1, 0, 1.4, 1];
+  const pts2 = randomPoints(600, 2.5, 11).map(([x, , z]) => [x, z] as const);
+
+  it('sharp outline matches a brute-force polygon distance (non-convex)', async () => {
+    const { profilePolygon } = await import('../../src/core/profile');
+    const poly = profilePolygon(L);
+    expect(poly.length / 2).toBe(6); // sharp corners only: no curve samples
+    const verts: [number, number][] = [];
+    for (let i = 0; i < poly.length; i += 2) verts.push([poly[i], poly[i + 1]]);
+    const f = profile2d('profile', { points: L, rounding: 0 });
+    // the preview plate shows the profile in the XZ plane with profile Y along -Z
+    for (const [u, v] of pts2) {
+      const ref = polyDist(u, -v, verts);
+      if (ref > -0.02) expect(f(u, v)).toBeCloseTo(ref, 4);
+    }
+  });
+
+  it('compiled distance equals the CPU reference for smooth outlines, rounding included', async () => {
+    const { profilePolygon, polygonDistance, VASE_POINTS } = await import('../../src/core/profile');
+    const poly = profilePolygon(VASE_POINTS);
+    expect(poly.length / 2).toBeGreaterThan(6); // curves were sampled
+    const f = profile2d('profile', { points: VASE_POINTS, rounding: 0.05 });
+    for (const [u, v] of pts2) {
+      const ref = polygonDistance(poly, u, -v) - 0.05;
+      if (ref > -0.02) expect(f(u, v)).toBeCloseTo(ref, 4);
+    }
+  });
+
+  it('smooth curves pass through every point', async () => {
+    const { profilePolygon, readPoints, VASE_POINTS } = await import('../../src/core/profile');
+    const poly = profilePolygon(VASE_POINTS);
+    for (const p of readPoints(VASE_POINTS)) {
+      let best = Infinity;
+      for (let i = 0; i < poly.length; i += 2)
+        best = Math.min(best, Math.hypot(poly[i] - p.x, poly[i + 1] - p.y));
+      expect(best).toBeLessThan(1e-9);
+    }
+  });
+
+  it('flags self-intersecting outlines and rejects malformed input', async () => {
+    const { selfIntersects, sanitizePoints } = await import('../../src/core/profile');
+    const bowtie = [0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1];
+    expect(selfIntersects(bowtie.filter((_, i) => i % 3 !== 2))).toBe(true);
+    const g = new G();
+    const id = g.node('profile', { points: bowtie });
+    const x = g.node('extrude', { height: 0.2 });
+    g.link(id, x, 'profile').out(x);
+    const { compile } = await import('../../src/core/compile');
+    expect(compile(g.doc).issues.some((i) => /crosses itself/.test(i.message))).toBe(true);
+    expect(sanitizePoints([0, 0, 1, 1, 0])).toBeNull(); // not triples
+    expect(sanitizePoints([0, 0, 1, 1, 0, 1])).toBeNull(); // fewer than 3 points
+    expect(sanitizePoints([0, 0, 1, 1, 0, 1, NaN, 1, 1])).toBeNull();
+    expect(sanitizePoints([0, 0, 5, 1, 0, 0, 1, 1, 1])).toEqual([0, 0, 1, 1, 0, 0, 1, 1, 1]);
+  });
+
+  it('revolved outline has the volume given by Pappus’s theorem', async () => {
+    const { profilePolygon } = await import('../../src/core/profile');
+    const poly = profilePolygon(L);
+    // area and centroid x by the shoelace formula
+    let A = 0,
+      cx = 0;
+    for (let i = 0, j = poly.length / 2 - 1; i < poly.length / 2; j = i++) {
+      const [x0, y0, x1, y1] = [poly[2 * j], poly[2 * j + 1], poly[2 * i], poly[2 * i + 1]];
+      const c = x0 * y1 - x1 * y0;
+      A += c / 2;
+      cx += ((x0 + x1) * c) / 6;
+    }
+    const vol = 2 * Math.PI * Math.abs(cx);
+    const g = new G();
+    const p = g.node('profile', { points: L });
+    const r = g.node('revolve', { offset: 0 });
+    g.link(p, r, 'profile').out(r);
+    const e = evaluator(g.doc);
+    const b = e.bounds.bounds!;
+    let inside = 0;
+    const N = 200_000;
+    const rnd = rng(5);
+    for (let i = 0; i < N; i++) {
+      const x = b.min[0] + rnd() * (b.max[0] - b.min[0]);
+      const y = b.min[1] + rnd() * (b.max[1] - b.min[1]);
+      const z = b.min[2] + rnd() * (b.max[2] - b.min[2]);
+      if (e.map(x, y, z) < 0) inside++;
+    }
+    const box = (b.max[0] - b.min[0]) * (b.max[1] - b.min[1]) * (b.max[2] - b.min[2]);
+    expect(A).toBeGreaterThan(0);
+    expect((inside / N) * box).toBeCloseTo(vol, 1);
+  });
+});

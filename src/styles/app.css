@@ -1423,3 +1423,103 @@ dialog.modal::backdrop {
     grid-template-columns: 84px minmax(0, 1fr) 22px;
   }
 }
+
+/* Profile point editor */
+.points-field {
+  padding: 4px 0 6px;
+}
+.points-canvas {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 1;
+  margin-top: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  touch-action: none;
+  user-select: none;
+}
+.pts-gridline {
+  fill: none;
+  stroke: var(--grid-dot);
+  stroke-width: 1;
+}
+.pts-axis {
+  stroke: var(--text-3);
+  stroke-dasharray: 4 4;
+  stroke-width: 1;
+}
+.pts-axis-label {
+  fill: var(--text-3);
+  font-size: 10px;
+}
+.pts-shape {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+.pts-shape.bad {
+  stroke: var(--danger);
+}
+.pts-add {
+  cursor: copy;
+  opacity: 0.55;
+}
+.pts-add circle {
+  fill: var(--panel);
+  stroke: var(--border-strong);
+}
+.pts-add path {
+  stroke: var(--text-2);
+  stroke-width: 1.5;
+}
+.pts-add:hover {
+  opacity: 1;
+}
+.pts-handle {
+  cursor: grab;
+  outline: none;
+}
+.pts-handle .hit {
+  fill: transparent;
+}
+.pts-handle circle:not(.hit),
+.pts-handle rect {
+  fill: var(--panel);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.pts-handle.sel circle:not(.hit),
+.pts-handle.sel rect {
+  fill: var(--accent);
+}
+.pts-handle:focus-visible .hit {
+  stroke: var(--focus);
+  stroke-width: 2;
+  fill: transparent;
+}
+.points-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+/* Control animation */
+.anim-toggle {
+  margin: 0 0 6px;
+}
+.anim-toggle.active,
+.btn.icon.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.anim-editor {
+  margin: 0 0 8px 10px;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent-soft);
+}

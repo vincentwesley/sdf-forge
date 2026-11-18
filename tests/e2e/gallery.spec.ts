@@ -17,6 +17,8 @@ const IDS = [
   'flower',
   'bridge',
   'morph',
+  'pawn',
+  'bracket',
   'gem',
 ];
 

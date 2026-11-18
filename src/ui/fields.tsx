@@ -3,6 +3,8 @@ import { Pin } from 'lucide-react';
 import type { ParamDef, ParamValue } from '../core/nodes/types';
 import { type DisplayUnit, displayUnit, fmt, fromHex, parseNumber, toHex } from './format';
 import { PALETTE } from '../state/ops';
+import { beginGesture } from '../state/store';
+import { PointsField } from './PointsEditor';
 
 export interface FieldProps {
   def: ParamDef;
@@ -50,6 +52,7 @@ function useScrub(
       const move = (ev: PointerEvent) => {
         const dx = ev.clientX - x0;
         if (!moved && Math.abs(dx) < 3) return;
+        if (!moved) beginGesture();
         moved = true;
         const mult = ev.shiftKey ? 0.1 : ev.altKey || ev.ctrlKey ? 10 : 1;
         set(start + dx * perPixel * mult);
@@ -193,7 +196,9 @@ export function NumberField({
           value={Math.min(dhi, Math.max(dlo, v * unit.factor))}
           aria-valuetext={`${fmt(v * unit.factor, unit.decimals)} ${unit.suffix}`}
           onChange={(e) => setDisplay(parseFloat(e.target.value))}
+          onPointerDown={beginGesture}
           onPointerUp={onCommit}
+          onPointerCancel={onCommit}
           onKeyUp={onCommit}
         />
         <NumText value={v} unit={unit} onSet={setDisplay} onCommit={onCommit} label={name} step={step} />
@@ -412,6 +417,8 @@ export function ParamField(props: FieldProps) {
       return <EnumField {...props} />;
     case 'bool':
       return <BoolField {...props} />;
+    case 'points':
+      return <PointsField {...props} />;
   }
 }
 

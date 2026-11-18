@@ -1,6 +1,7 @@
 import type { NodeDef } from './types';
 import { sdBox } from './lib';
 import { MAX_TEXT, fontReady, textGrid } from '../text';
+import { VASE_POINTS, profilePolygon, selfIntersects } from '../profile';
 
 const IQ2 = 'Inigo Quilez, iquilezles.org/articles/distfunctions2d (MIT)';
 const flat = (x: number, y: number) => ({
@@ -203,3 +204,84 @@ export const text: NodeDef = {
 };
 
 SHAPES_2D.push(text);
+
+export const profile: NodeDef = {
+  type: 'profile',
+  label: 'Profile',
+  category: 'profile',
+  summary: 'Draw your own 2D outline from points — vases, bottles, brackets.',
+  help:
+    'A flat outline you draw yourself. Drag the points in the editor, click the + on an edge to add a point, and switch any point between a sharp corner and a smooth curve. Connected to Revolve, X is the distance from the axis and Y the height, so drawing half a silhouette gives a vase, bottle or chess piece. "Rounding" softens every corner and makes the outline a little fatter.' +
+    PROFILE_NOTE,
+  keywords: [
+    'outline',
+    'draw',
+    'custom',
+    'polygon',
+    'spline',
+    'curve',
+    'lathe',
+    'silhouette',
+    'vase',
+    'bottle',
+    '2d',
+  ],
+  inputs: [],
+  output: 'sdf2',
+  transform: 2,
+  colored: true,
+  exactness: 'exact',
+  params: [
+    { key: 'points', label: 'Outline', kind: 'points', default: VASE_POINTS, structural: true },
+    { key: 'rounding', label: 'Rounding', kind: 'float', unit: 'length', default: 0, min: 0, softMax: 0.3 },
+  ],
+  derive: (pr) => {
+    const poly = profilePolygon(pr.points as number[]);
+    const out: Record<string, number | number[]> = { r: pr.rounding as number };
+    for (let i = 0; i < poly.length / 2; i++) out[`v${i}`] = [poly[2 * i], poly[2 * i + 1]];
+    return out;
+  },
+  emit: ({ ir, p, value, derived, empty, issue }) => {
+    const poly = profilePolygon(value('points') as number[]);
+    const n = poly.length / 2;
+    if (n < 3) return empty();
+    if (selfIntersects(poly))
+      issue('The outline crosses itself, so inside and outside are ambiguous. Move a point.');
+    // Inigo Quilez's exact polygon distance with an even-odd winding sign
+    const v = Array.from({ length: n }, (_, i) => derived(`v${i}`));
+    const py = ir.y(p);
+    let d2 = ir.dot2(ir.sub(p, v[0]));
+    let s: ReturnType<typeof ir.c> = ir.c(1);
+    for (let i = 0, j = n - 1; i < n; j = i, i++) {
+      const e = ir.sub(v[j], v[i]);
+      const w = ir.sub(p, v[i]);
+      const h = ir.clamp(ir.div(ir.dot(w, e), ir.max(ir.dot(e, e), 1e-12)), 0, 1);
+      d2 = ir.min(d2, ir.dot2(ir.sub(w, ir.mul(e, h))));
+      const c1 = ir.select(ir.lt(py, ir.y(v[i])), 0, 1); // p.y >= vi.y
+      const c2 = ir.select(ir.lt(py, ir.y(v[j])), 1, 0); // p.y < vj.y
+      const c3 = ir.select(ir.gt(ir.mul(ir.x(e), ir.y(w)), ir.mul(ir.y(e), ir.x(w))), 1, 0);
+      const all = ir.add(ir.add(c1, c2), c3); // 3 = all true, 0 = all false: crossing
+      s = ir.select(ir.gt(ir.abs(ir.sub(all, 1.5)), 1), ir.neg(s), s);
+    }
+    return { d: ir.sub(ir.mul(s, ir.sqrt(d2)), derived('r')), col: ir.c(0) };
+  },
+  bounds: ({ params }) => {
+    const poly = profilePolygon(params.points as number[]);
+    if (poly.length < 6) return null;
+    const r = Math.max(0, params.rounding as number);
+    let x0 = Infinity,
+      y0 = Infinity,
+      x1 = -Infinity,
+      y1 = -Infinity;
+    for (let i = 0; i < poly.length; i += 2) {
+      x0 = Math.min(x0, poly[i]);
+      x1 = Math.max(x1, poly[i]);
+      y0 = Math.min(y0, poly[i + 1]);
+      y1 = Math.max(y1, poly[i + 1]);
+    }
+    return { min: [x0 - r, y0 - r, 0], max: [x1 + r, y1 + r, 0] };
+  },
+  credit: 'Polygon distance after Inigo Quilez, iquilezles.org/articles/distfunctions2d (MIT)',
+};
+
+SHAPES_2D.push(profile);
