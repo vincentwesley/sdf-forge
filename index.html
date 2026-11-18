@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>SDF Forge — build 3D shapes from signed distance functions</title>
+    <meta
+      name="description"
+      content="Build 3D shapes in your browser by connecting nodes: blend, twist, repeat and carve signed distance functions, see them ray-marched in real time, and export watertight STL or glTF meshes. By Vin's Atelier."
+    />
+    <meta name="author" content="Vin's Atelier" />
+    <meta name="theme-color" content="#17181b" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="SDF Forge — a node-based SDF modeller in the browser" />
+    <meta
+      property="og:description"
+      content="Blend, twist, repeat and carve shapes, then export watertight meshes for 3D printing and games. By Vin's Atelier."
+    />
+    <meta property="og:image" content="https://vincentwesley.github.io/sdf-forge/og.png" />
+    <meta property="og:site_name" content="SDF Forge by Vin's Atelier" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+  </head>
+  <body>
+    <noscript>SDF Forge needs JavaScript and WebGL 2 to run.</noscript>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
