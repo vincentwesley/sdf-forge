@@ -35,6 +35,7 @@ export function Viewport() {
   const grid = useEditor((s) => s.grid);
   const addMode = useEditor((s) => s.addMode);
   const emptyScene = useEditor((s) => getScene(s.doc, s.viewRoot, s.selection[0] ?? null).compiled.empty);
+  const hasNodes = useEditor((s) => s.doc.nodes.length > 1);
   const viewRoot = useEditor((s) => s.viewRoot);
   const viewRootLabel = useEditor((s) => {
     const n = s.viewRoot ? s.doc.nodes.find((x) => x.id === s.viewRoot) : null;
@@ -489,8 +490,18 @@ export function Viewport() {
       {emptyScene && (
         <div className="empty-state">
           <div className="empty-card">
-            <h2>Nothing to show yet</h2>
-            <p>Add a shape with the buttons in the top-left, or open the gallery for a ready-made example.</p>
+            <h2>
+              {hasNodes
+                ? viewRoot
+                  ? 'This node has no shape yet'
+                  : 'Nothing is connected to Output'
+                : 'Nothing to show yet'}
+            </h2>
+            <p>
+              {hasNodes
+                ? 'Only what is wired into the Output node is drawn. Connect a node to Output in the graph, or add a shape with the buttons in the top-left.'
+                : 'Add a shape with the buttons in the top-left, or open the gallery for a ready-made example.'}
+            </p>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
               <button type="button" className="btn primary" onClick={() => onAdd('sphere')}>
                 Add a sphere

@@ -29,6 +29,8 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
 | Sculpt brushes (add/remove clay) | Later | Requires a voxel/brush layer outside the graph model. |
 | Image-based materials / triplanar textures | Later | GLB textures and UVs from SDF meshes need unwrapping; vertex colours chosen instead. |
 | Node groups / sub-graphs | Later | Valuable for experts; v1 ships Controls pinning instead. |
+| Parameter animation over time | Later | Shader artists asked for it (USABILITY 3.8); needs a timeline and animated exports. The Shadertoy export already animates the camera. |
+| Copy/paste of nodes | **Build** | Requested in the shader-artist walkthrough; cheap with the system clipboard. |
 | User accounts / cloud gallery | Rejected | Needs a server; links + local library cover sharing for free. |
 | WebGPU backend | Later (optional) | WebGL2 is required for testing; the IR makes WGSL a contained addition. |
 | 3MF export | Later | STL is universal; 3MF mainly adds colour for multi-material printers. |
@@ -53,3 +55,11 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
    exactly `k` and users can reason about it as a distance.
 10. **Bundled Inter font** (OFL) so the UI looks the same on every OS and in screenshots.
 11. **Playwright pinned to the version matching the preinstalled Chromium** locally; CI installs its own.
+12. **Shell has an Open top/bottom option and Cut can measure from the input's extent** (vs. absolute plane positions
+    only). Templates must keep working when users change their Controls; derived uniforms may now read the input's
+    bounds (`DeriveCtx.inputBounds`).
+13. **Level-set vertices that coincide are nudged apart** (by 0.2–0.6 % of a mesh cell along their inward normal):
+    Manifold's output is manifold by topology, but slicers weld by position. See `separateCoincident` in
+    `src/core/mesh/mesh.ts`.
+14. **Any change counts as interaction for the renderer** (camera, slider drags), and idle refinement adapts to the
+    measured frame cost, so the page stays responsive on software rendering.

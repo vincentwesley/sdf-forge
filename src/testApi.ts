@@ -11,6 +11,7 @@ import { loadDoc, store } from './state/store';
 import { encodeDoc, decodeDoc } from './core/share';
 import { exportMesh } from './workers/meshClient';
 import type { MeshFormat } from './core/mesh/pipeline';
+import { shadertoySource } from './core/shadertoy';
 
 function sceneFor(doc: SdfDoc) {
   const c = compile(doc);
@@ -97,6 +98,7 @@ export const testApi = {
       bounds: sceneFor(normalizeDoc(doc)).a.bounds,
     };
   },
+  shadertoy: () => shadertoySource(store.getState().doc),
   encode: (d: SdfDoc) => encodeDoc(d),
   decode: (s: string) => decodeDoc(s),
   exportMesh: async (format: MeshFormat, cells = 100) => {

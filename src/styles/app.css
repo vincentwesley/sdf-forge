@@ -1391,3 +1391,33 @@ dialog.modal::backdrop {
     padding: 0 6px 0 10px;
   }
 }
+.back-link {
+  margin: 6px 6px 0;
+  color: var(--text-2);
+}
+@media (max-width: 560px) {
+  .form-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .form-row + .muted {
+    margin-left: 0 !important;
+  }
+  .segmented {
+    flex-wrap: wrap;
+  }
+  [role='tablist'].segmented button svg {
+    display: none;
+  }
+  .gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .modal-body {
+    padding: 12px;
+  }
+  .field {
+    grid-template-columns: 84px minmax(0, 1fr) 22px;
+  }
+}

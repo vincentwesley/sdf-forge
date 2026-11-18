@@ -378,3 +378,62 @@ export function newDocument() {
 }
 
 export const actions = { set, get };
+
+// ---------------------------------------------------------------------------
+// copy / paste (internal clipboard, mirrored to the system clipboard as JSON)
+
+interface Clip {
+  kind: 'sdf-forge-nodes';
+  nodes: SdfDoc['nodes'];
+  edges: SdfDoc['edges'];
+}
+let clip: Clip | null = null;
+
+export function copyNodes(ids: string[]): boolean {
+  const doc = get().doc;
+  const set = new Set(ids);
+  const nodes = doc.nodes.filter((n) => set.has(n.id) && n.type !== 'output');
+  if (!nodes.length) return false;
+  const keep = new Set(nodes.map((n) => n.id));
+  clip = {
+    kind: 'sdf-forge-nodes',
+    nodes: structuredClone(nodes),
+    edges: doc.edges.filter((e) => keep.has(e.source) && keep.has(e.target)),
+  };
+  navigator.clipboard?.writeText(JSON.stringify(clip)).catch(() => {});
+  toast(`Copied ${nodes.length} node${nodes.length > 1 ? 's' : ''}`, 'info', 1500);
+  return true;
+}
+
+export async function pasteNodes() {
+  let c = clip;
+  try {
+    const text = await navigator.clipboard?.readText();
+    const parsed = text ? JSON.parse(text) : null;
+    if (parsed?.kind === 'sdf-forge-nodes') c = parsed;
+  } catch {
+    /* clipboard unavailable or not ours: use the internal copy */
+  }
+  if (!c) return;
+  const tmp = normalizeDoc({ ...emptyDoc(), nodes: [...emptyDoc().nodes, ...c.nodes], edges: c.edges });
+  const pasted = tmp.nodes.filter((n) => n.type !== 'output');
+  const map: Record<string, string> = {};
+  const doc = get().doc;
+  const nodes = pasted.map((n) => {
+    const id = makeNode(n.type).id;
+    map[n.id] = id;
+    return { ...n, id, x: n.x + 60, y: n.y + 80 };
+  });
+  const edges = tmp.edges
+    .filter((e) => map[e.source] && map[e.target])
+    .map((e, i) => ({
+      ...e,
+      id: `p${Date.now().toString(36)}${i}`,
+      source: map[e.source],
+      target: map[e.target],
+    }));
+  commit(
+    { ...doc, nodes: [...doc.nodes, ...nodes], edges: [...doc.edges, ...edges] },
+    { selection: nodes.map((n) => n.id) },
+  );
+}

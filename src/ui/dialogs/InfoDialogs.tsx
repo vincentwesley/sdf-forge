@@ -8,6 +8,7 @@ const SHORTCUTS: [string, string][] = [
   [`${M} Shift Z / ${M} Y`, 'Redo'],
   [`${M} K`, 'Command palette (every action, searchable)'],
   [`${M} D`, 'Duplicate selected nodes'],
+  [`${M} C / ${M} V`, 'Copy and paste nodes (works between tabs)'],
   ['Delete / Backspace', 'Delete selected nodes or wires'],
   ['A (in graph)', 'Add a node'],
   ['Right-click (graph)', 'Add a node at the pointer'],

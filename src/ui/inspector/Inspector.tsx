@@ -98,6 +98,11 @@ function NodePanel({ id }: { id: string }) {
 
   return (
     <div className="inspector" aria-label={`Properties of ${node.name ?? def.label}`} data-testid="inspector">
+      {doc.pinned.length > 0 && (
+        <button type="button" className="btn sm ghost back-link" onClick={() => select([])}>
+          ← Shape overview and Controls
+        </button>
+      )}
       <div className="insp-head">
         <NodeIcon type={node.type} category={def.category} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -206,6 +211,8 @@ function NodePanel({ id }: { id: string }) {
         </div>
       ))}
 
+      <BlendSection id={id} />
+
       {def.inputs.length > 0 && <InputsSection id={id} />}
 
       {def.output === 'sdf3' || def.output === 'sdf' ? (
@@ -231,6 +238,50 @@ function NodePanel({ id }: { id: string }) {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+const COMBINE_VERB: Record<string, string> = {
+  union: 'Blend with the other shapes',
+  subtract: 'Soften the carved edge',
+  intersect: 'Soften the overlap edge',
+};
+
+/**
+ * Beginners think "this shape should melt into the others", not "edit the
+ * Union node". Show the smoothness of the combine node this shape feeds.
+ */
+function BlendSection({ id }: { id: string }) {
+  const doc = useEditor((s) => s.doc);
+  const edge = doc.edges.find((e) => e.source === id);
+  const parent = edge ? doc.nodes.find((n) => n.id === edge.target) : undefined;
+  if (!parent || !COMBINE_VERB[parent.type]) return null;
+  const def = paramsOf(parent.type).find((p) => p.key === 'smooth')!;
+  return (
+    <div className="insp-section">
+      <h3>
+        Blending
+        <button
+          type="button"
+          className="btn sm ghost"
+          onClick={() => select([parent.id])}
+          title="Edit the combining node"
+        >
+          {parent.name ?? getDef(parent.type)!.label} →
+        </button>
+      </h3>
+      <ParamField
+        def={def}
+        label={COMBINE_VERB[parent.type]}
+        value={parent.params.smooth}
+        mmPerUnit={doc.settings.mmPerUnit}
+        onChange={(v) => setParam(parent.id, 'smooth', v)}
+        onCommit={endMerge}
+      />
+      <p className="explain" style={{ fontSize: 12 }}>
+        This setting belongs to the {getDef(parent.type)!.label} node, so it affects every shape joined there.
+      </p>
     </div>
   );
 }

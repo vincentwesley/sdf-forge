@@ -10,7 +10,18 @@ import { ExportDialog } from './dialogs/ExportDialog';
 import { GalleryDialog } from './dialogs/GalleryDialog';
 import { ShareDialog } from './dialogs/ShareDialog';
 import { AboutDialog, ShortcutsDialog } from './dialogs/InfoDialogs';
-import { actions, deleteNodes, duplicate, redo, select, store, undo, useEditor } from '../state/store';
+import {
+  actions,
+  copyNodes,
+  deleteNodes,
+  duplicate,
+  pasteNodes,
+  redo,
+  select,
+  store,
+  undo,
+  useEditor,
+} from '../state/store';
 import { useResolvedTheme } from './theme';
 import type { ViewMode } from '../render/renderer';
 
@@ -83,6 +94,11 @@ function NarrowTabs() {
   );
 }
 
+/** Text selections should keep native copy. */
+function inGraphText(t: HTMLElement) {
+  return !!window.getSelection()?.toString() && !t.closest('.react-flow');
+}
+
 const MODE_KEYS: Record<string, ViewMode> = { '1': 'shaded', '2': 'print', '3': 'normals', '4': 'cost' };
 
 function useShortcuts() {
@@ -109,6 +125,15 @@ function useShortcuts() {
       if (mod && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         redo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'c' && !inGraphText(t)) {
+        if (s.selection.length && copyNodes(s.selection)) e.preventDefault();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'v' && !inGraphText(t)) {
+        e.preventDefault();
+        void pasteNodes();
         return;
       }
       if (mod && e.key.toLowerCase() === 'd') {

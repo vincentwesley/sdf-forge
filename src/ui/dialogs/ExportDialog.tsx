@@ -11,7 +11,11 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import { Modal } from './Modal';
-import { setSettings, toast, useEditor, store } from '../../state/store';
+import { actions, setSettings, toast, useEditor, store } from '../../state/store';
+
+function setSettingsView(mode: 'print') {
+  actions.set({ viewMode: mode, dialog: null });
+}
 import { getScene } from '../../state/scene';
 import { fmt, parseNumber } from '../format';
 import { edgeForQuality } from '../../core/mesh/mesh';
@@ -251,6 +255,20 @@ function ModelTab() {
         </div>
       )}
 
+      {format === 'stl' && !st && !busy && (
+        <p className="note" style={{ marginTop: 4 }}>
+          Printing? Check for walls that are too thin and steep overhangs first.{' '}
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => {
+              setSettingsView('print');
+            }}
+          >
+            Show print check
+          </button>
+        </p>
+      )}
       {busy && (
         <div style={{ margin: '12px 0' }} role="status" aria-live="polite">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>

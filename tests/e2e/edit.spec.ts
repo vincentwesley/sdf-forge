@@ -123,3 +123,25 @@ test('command palette runs actions', async ({ page }) => {
   const doc = await page.evaluate(() => window.sdfForge.getDoc());
   expect(doc.nodes.some((n) => n.type === 'octahedron')).toBe(true);
 });
+
+test('copy and paste nodes; blend control on a shape edits its Union', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await openApp(page);
+  await page.locator('[data-testid="node-torus"]').click();
+  const n0 = (await page.evaluate(() => window.sdfForge.state())).nodes;
+  await page.getByTestId('viewport-canvas').focus();
+  await page.keyboard.press('Control+c');
+  await page.keyboard.press('Control+v');
+  await expect.poll(async () => (await page.evaluate(() => window.sdfForge.state())).nodes).toBe(n0 + 1);
+  // the shape's inspector offers the union's smoothness as "Blend with the other shapes"
+  await page.locator('[data-testid="node-sphere"]').click();
+  const blend = page
+    .getByTestId('inspector')
+    .getByRole('textbox', { name: 'Blend with the other shapes (mm)' });
+  await blend.fill('5');
+  await blend.press('Enter');
+  const smooth = await page.evaluate(
+    () => window.sdfForge.getDoc().nodes.find((n) => n.type === 'union')!.params.smooth,
+  );
+  expect(smooth).toBeCloseTo(0.5, 5);
+});

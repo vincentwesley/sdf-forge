@@ -159,7 +159,7 @@ vec3 shade(vec3 p, vec3 rd, float t) {
   vec3 base = pow(clamp(mc.rgb, 0.0, 1.0), vec3(2.2));
   if (uMode == 1) return n * 0.5 + 0.5;
 
-  float rough = uMaterial == 0 ? 0.65 : (uMaterial == 1 ? 0.22 : 0.3);
+  float rough = uMaterial == 0 ? 0.65 : (uMaterial == 1 ? 0.16 : 0.3);
   float metal = uMaterial == 2 ? 1.0 : 0.0;
   vec3 L = normalize(uKeyDir);
   vec3 H = normalize(L - rd);
@@ -205,6 +205,11 @@ vec3 shade(vec3 p, vec3 rd, float t) {
   vec3 r = reflect(rd, n);
   vec3 env = mix(uBgBottom, uBgTop, clamp(r.y * 0.5 + 0.5, 0.0, 1.0)) * 1.4 + vec3(smoothstep(0.6, 0.95, r.y)) * 0.6;
   col += env * F * ao * (1.0 - rough) * 0.9;
+  if (uMaterial == 1) {
+    // glossy: a clear-coat style sharp highlight of the key light
+    float cc = pow(ndh, 220.0) * 6.0 * sh;
+    col += vec3(cc) * (0.04 + 0.96 * pow(1.0 - ndv, 5.0) + 0.3);
+  }
 
   if (uSelOn > 0.5) {
     // compare against the scene distance at the same point so hit-point error cancels out
