@@ -17,7 +17,7 @@ describe('mesh pipeline', () => {
     const P = new Float32Array(c.paramCount);
     packParams(doc, c, P);
     const bounds = analyze(doc, c.rootId).bounds!;
-    const out = runExport(
+    const out = await runExport(
       wasm,
       { ...c, P, bounds, title: 's', mmPerUnit: 10, material: 'clay' },
       { format: 'stl', edgeLength: 0.05 },

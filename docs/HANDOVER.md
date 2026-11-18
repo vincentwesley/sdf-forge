@@ -14,7 +14,7 @@ Living document: read this first when resuming work on SDF Forge.
 
 `src/core` is DOM-free TypeScript: `ir/` (typed expression IR → GLSL and scalar JS), `nodes/` (34 node definitions
 with emit/bounds/Lipschitz/help), `graph/` (document model, validation, auto layout), `compile.ts` (graph → shader +
-CPU evaluator + param slots), `mesh/` (Manifold level-set meshing and STL/GLB/OBJ writers), `share.ts` (links).
+CPU evaluator + param slots), `mesh/` (Manifold level-set meshing and STL/3MF/GLB/OBJ writers, `zip.ts`), `share.ts` (links).
 `src/render` is the WebGL2 ray marcher; `src/ui` the React app (xyflow graph, inspector, dialogs); `src/state` the
 Zustand store with undo history; `src/gallery` the examples (written with a small `DocBuilder` DSL).
 `window.sdfForge` (`src/testApi.ts`) exposes hooks for tests and the thumbnail script.
@@ -73,7 +73,7 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 * Editor: 34 node types (incl. Text), toolbar add/carve, picking + move gizmo, inspector in mm with explanations,
   graph with compatible-node search, copy/paste, command palette, undo/redo, autosave, tour, light/dark, responsive
   phone/tablet/desktop layouts, keyboard support, reduced motion.
-* Exports: STL/GLB/OBJ (watertight, manifold, sized in mm, credited), PNG up to 4K, MP4/WebM turntable,
+* Exports: STL/3MF/GLB/OBJ (watertight, manifold, sized in mm, credited), PNG up to 4K, MP4/WebM turntable,
   Shadertoy/GLSL code. Share links and graph files.
 * Gallery: 16 examples incl. 6 printable templates whose Controls are tested across their ranges.
 * Docs: README (screenshots, GIF, live link), RESEARCH, PLAN, DECISIONS, ACCEPTANCE, USABILITY (three

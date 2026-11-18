@@ -1,9 +1,11 @@
 import { makeEvaluator } from '../compile';
 import type { AABB } from '../nodes/types';
+import type { SdfDoc } from '../graph/doc';
 import { type ManifoldModule, type MeshResult, bboxOf, extractMesh, sdfNormals } from './mesh';
 import { srgbToLinear, toPrintSpace, writeGLB, writeOBJ, writeSTL } from './writers';
+import { write3MF } from './threemf';
 
-export type MeshFormat = 'stl' | 'glb' | 'obj';
+export type MeshFormat = 'stl' | '3mf' | 'glb' | 'obj';
 
 export interface ExportInput {
   jsMap: string;
@@ -18,6 +20,22 @@ export interface ExportInput {
   material: 'clay' | 'glossy' | 'metal';
   /** distance grids used by text nodes */
   textures?: { data: Float32Array; w: number; h: number; cell: number }[];
+  /** PNG preview embedded in 3MF files */
+  thumbnail?: Uint8Array | null;
+  /** the shapes' own colours (sRGB), used as the 3MF filament palette */
+  palette?: [number, number, number][] | null;
+}
+
+/** Distinct colours set on the shapes that feed the output (sRGB 0..1). */
+export function shapeColors(doc: SdfDoc, leaves: string[]): [number, number, number][] {
+  const out: [number, number, number][] = [];
+  for (const id of leaves) {
+    const c = doc.nodes.find((n) => n.id === id)?.params.color;
+    if (!Array.isArray(c) || c.length !== 3) continue;
+    const rgb = c.map(Number) as [number, number, number];
+    if (!out.some((o) => Math.hypot(o[0] - rgb[0], o[1] - rgb[1], o[2] - rgb[2]) < 1e-3)) out.push(rgb);
+  }
+  return out;
 }
 
 export interface ExportOptions {
@@ -44,7 +62,11 @@ export interface ExportOutput {
   stats: ExportStats;
 }
 
-export function runExport(wasm: ManifoldModule, input: ExportInput, opts: ExportOptions): ExportOutput {
+export async function runExport(
+  wasm: ManifoldModule,
+  input: ExportInput,
+  opts: ExportOptions,
+): Promise<ExportOutput> {
   const ev = makeEvaluator(input, new Float32Array(input.P));
   const mesh: MeshResult = extractMesh(wasm, ev.map, input.bounds, {
     edgeLength: opts.edgeLength,
@@ -76,11 +98,22 @@ export function runExport(wasm: ManifoldModule, input: ExportInput, opts: Export
     colors[i + 1] = srgbToLinear(c[1]);
     colors[i + 2] = srgbToLinear(c[2]);
   }
+  const srgb = colors.map((v) => (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055));
+  if (opts.format === '3mf') {
+    // 3MF: millimetres, Z up like STL, plus a colour palette, credit and thumbnail
+    const out = toPrintSpace(mesh.positions, mm);
+    const bytes = await write3MF(out, mesh.indices, {
+      title,
+      colors: srgb,
+      thumbnail: input.thumbnail,
+      palette: input.palette,
+    });
+    return { bytes, mime: 'model/3mf', ext: '3mf', stats };
+  }
   if (opts.format === 'obj') {
     // OBJ: millimetres, Y-up (most DCC tools import Y-up OBJ); colours in sRGB as the common extension
     const pos = new Float32Array(mesh.positions.length);
     for (let i = 0; i < pos.length; i++) pos[i] = mesh.positions[i] * mm;
-    const srgb = colors.map((v) => (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055));
     const text = writeOBJ(pos, normals, mesh.indices, title, srgb);
     return {
       bytes: new TextEncoder().encode(text).buffer as ArrayBuffer,

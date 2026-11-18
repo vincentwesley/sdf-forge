@@ -19,7 +19,7 @@ function setSettingsView(mode: 'print') {
 import { getScene } from '../../state/scene';
 import { fmt, parseNumber } from '../format';
 import { edgeForQuality } from '../../core/mesh/mesh';
-import type { ExportStats, MeshFormat } from '../../core/mesh/pipeline';
+import { shapeColors, type ExportStats, type MeshFormat } from '../../core/mesh/pipeline';
 import { cancelExports, downloadBlob, exportMesh, safeFilename } from '../../workers/meshClient';
 import { getActiveRenderer } from '../../render/registry';
 import { glslLibrary, shadertoySource } from '../../core/shadertoy';
@@ -35,10 +35,27 @@ const QUALITY = [
 ];
 
 const FORMATS: { id: MeshFormat; label: string; desc: string }[] = [
-  { id: 'stl', label: 'STL', desc: '3D printing (millimetres, Z up)' },
+  { id: 'stl', label: 'STL', desc: '3D printing, works with every slicer (millimetres, Z up)' },
+  {
+    id: '3mf',
+    label: '3MF',
+    desc: 'Modern slicers like Bambu Studio, PrusaSlicer, Cura (millimetres, colours, preview, smaller file)',
+  },
   { id: 'glb', label: 'GLB', desc: 'Games, Blender, web (glTF, colours)' },
   { id: 'obj', label: 'OBJ', desc: 'Any 3D app (millimetres, colours)' },
 ];
+
+/** A small PNG of the current view for 3MF previews; null if rendering is unavailable. */
+async function thumbnailPng(): Promise<Uint8Array | null> {
+  try {
+    const r = getActiveRenderer();
+    if (!r) return null;
+    const blob = await r.capture(256, 256, 8);
+    return new Uint8Array(await blob.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
 
 export function ExportDialog({ initialTab = 'model' }: { initialTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -140,6 +157,7 @@ function ModelTab() {
     try {
       const s = store.getState();
       const sc = getScene(s.doc, null, null);
+      const thumbnail = format === '3mf' ? await thumbnailPng() : null;
       const out = await exportMesh(
         {
           jsMap: sc.compiled.jsMap,
@@ -152,6 +170,8 @@ function ModelTab() {
           mmPerUnit: s.doc.settings.mmPerUnit,
           material: s.doc.settings.material,
           textures: sc.compiled.textures,
+          palette: shapeColors(s.doc, sc.compiled.leaves),
+          thumbnail,
         },
         { format, edgeLength: edge, simplify: simplify ? edge * 0.12 : 0 },
       );
@@ -174,6 +194,7 @@ function ModelTab() {
       </p>
     );
 
+  const printFormat = format === 'stl' || format === '3mf';
   const st = result?.stats;
   const watertight = st && st.status.toLowerCase().includes('noerror');
   return (
@@ -246,7 +267,7 @@ function ModelTab() {
           </div>
         </div>
       </div>
-      {format !== 'stl' && (
+      {!printFormat && (
         <div className="form-row">
           <span className="label">Triangles</span>
           <label className="toggle">
@@ -256,7 +277,7 @@ function ModelTab() {
         </div>
       )}
 
-      {format === 'stl' && !st && !busy && (
+      {printFormat && !st && !busy && (
         <p className="note" style={{ marginTop: 4 }}>
           Printing? Check for walls that are too thin and steep overhangs first.{' '}
           <button
