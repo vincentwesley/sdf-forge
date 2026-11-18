@@ -34,6 +34,8 @@ export function nodeSummary(n: GNode, mmPerUnit: number): string {
     }
     case 'output':
       return 'final shape';
+    case 'text':
+      return `“${String(p.text)}”, ${len(p.size as number)}`;
     case 'displace':
       return `${p.pattern}, ${len(p.amount as number)}`;
     case 'lattice':

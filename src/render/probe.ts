@@ -10,6 +10,7 @@ export function gpuEvaluate(
   paramCount: number,
   P: Float32Array,
   points: Float32Array, // xyz triples
+  textures: { data: Float32Array; w: number; h: number }[] = [],
 ): { d: Float32Array; color: Float32Array } {
   const n = points.length / 3;
   const W = Math.min(256, n);
@@ -84,6 +85,16 @@ void main() {
   // the render targets were bound to unit 0 while being created; rebind the points
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, tex);
+  textures.forEach((t, i) => {
+    const tx = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE1 + i);
+    gl.bindTexture(gl.TEXTURE_2D, tx);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, t.w, t.h, 0, gl.RED, gl.FLOAT, t.data);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.uniform1i(gl.getUniformLocation(prog, `uT${i}`), 1 + i);
+  });
   gl.drawArrays(gl.TRIANGLES, 0, 3);
 
   const read = (att: number) => {

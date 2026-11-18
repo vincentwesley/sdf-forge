@@ -8,6 +8,8 @@ import type { SdfDoc } from './graph/doc';
 export function shadertoySource(doc: SdfDoc): string {
   const c: Compiled = compile(doc);
   const P = new Float32Array(c.paramCount);
+  if (c.textures.length)
+    return `// ${doc.title}\n// This shape uses Text, which needs a distance texture, so it can't be exported as a\n// self-contained Shadertoy shader yet. Export a mesh instead, or remove the Text node.\n`;
   packParams(doc, c, P);
   const b = analyze(doc, c.rootId).bounds ?? { min: [-1, -1, -1], max: [1, 1, 1] };
   const ctr = b.min.map((v, i) => (v + b.max[i]) / 2);

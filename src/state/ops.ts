@@ -157,6 +157,7 @@ export function addShapeToScene(
   type: string,
   opts: { mode?: AddMode; bounds?: AABB | null; params?: Record<string, ParamValue> } = {},
 ): { doc: SdfDoc; nodeId: string } {
+  if (type.startsWith('__existing__')) return wireIntoScene(doc, type.slice(12), opts.mode ?? 'add');
   const out = findOutput(doc)!;
   const mode = opts.mode ?? 'add';
   const r = approxRadius(type);
@@ -173,19 +174,39 @@ export function addShapeToScene(
   const params: Record<string, ParamValue> = { ...(opts.params ?? {}) };
   if (def.transform === 3) params.position = pos;
   if (def.colored) params.color = mode === 'carve' ? [0.85, 0.85, 0.82] : nextColor(doc);
-  const current = inputEdges(doc, out.id, 'shape')[0];
-  const currentNode = current ? nodeById(doc, current.source) : undefined;
-
+  if (def.output === 'sdf2') {
+    // a flat profile from the toolbar: stand it up as an extruded plate facing the camera
+    const ys = doc.nodes.map((n) => n.y);
+    const xs = doc.nodes.map((n) => n.x);
+    const profile = makeNode(type, Math.min(...xs) - 260, Math.max(...ys) + 120, params);
+    const ex = makeNode('extrude', Math.min(...xs), Math.max(...ys) + 120, {
+      height: 0.3,
+      rounding: 0.04,
+      position: pos,
+      rotation: [90, 0, 0],
+    });
+    const withProfile = connect(addNode(addNode(doc, profile), ex), profile.id, ex.id, 'profile');
+    const r = addShapeToScene(withProfile, '__existing__' + ex.id, { ...opts });
+    return { doc: r.doc, nodeId: profile.id };
+  }
   // graph placement: left of the output, below existing inputs
   const sources = doc.nodes.filter((n) => n.type !== 'output');
   const minX = sources.length ? Math.min(...sources.map((n) => n.x)) : out.x - 300;
   const maxY = sources.length ? Math.max(...sources.map((n) => n.y)) : out.y - 60;
   const shape = makeNode(type, minX, maxY + 120, params);
-  let next = addNode(doc, shape);
+  return wireIntoScene(addNode(doc, shape), shape.id, mode);
+}
+
+/** Wire an existing (unconnected) 3D node into the scene: join the main Union, or carve with it. */
+function wireIntoScene(doc: SdfDoc, shapeId: string, mode: AddMode): { doc: SdfDoc; nodeId: string } {
+  const out = findOutput(doc)!;
+  const shape = nodeById(doc, shapeId)!;
+  const current = inputEdges(doc, out.id, 'shape')[0];
+  const currentNode = current ? nodeById(doc, current.source) : undefined;
+  let next = doc;
 
   if (!currentNode) {
-    shape.x = out.x - 280;
-    shape.y = out.y;
+    next = moveNodes(next, { [shape.id]: { x: out.x - 280, y: out.y } });
     next = connect(next, shape.id, out.id, 'shape');
     return { doc: next, nodeId: shape.id };
   }

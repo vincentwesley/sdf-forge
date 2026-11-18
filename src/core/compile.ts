@@ -2,6 +2,7 @@ import { type Expr, IRBuilder } from './ir/ir';
 import { emitGlslFunction } from './ir/glsl';
 import { emitJsBody } from './ir/js';
 import { GLSL_NOISE, noise3 } from './ir/noise';
+import { type TextGrid, glslTextureHelper, sampleGrid } from './text';
 import { type GNode, type SdfDoc, findOutput, inputEdges, resolveDims } from './graph/doc';
 import { getDef, paramsOf } from './nodes/registry';
 import type { AABB, DeriveCtx, Dim, EmitCtx, NodeDef, ParamValue, ShapeVal } from './nodes/types';
@@ -43,7 +44,11 @@ export interface Compiled {
   empty: boolean;
   rootId: string | null;
   rootDim: Dim | null;
+  /** distance grids sampled by the scene (text), bound to uT0..uTn */
+  textures: TextGrid[];
 }
+
+export const MAX_TEXTURES = 4;
 
 export interface CompileOptions {
   /** compile this node instead of the Output node ("view this node") */
@@ -94,6 +99,7 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
   const stack = new Set<string>();
   const leaves: string[] = [];
   const issueSet = new Set<string>();
+  const textures: TextGrid[] = [];
   const addIssue = (node: string, level: CompileIssue['level'], message: string) => {
     const k = `${node}|${message}`;
     if (issueSet.has(k)) return;
@@ -184,6 +190,19 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
       value: (k) => node.params[k],
       derived,
       empty: emptyShape,
+      texture: (grid) => {
+        let i = textures.indexOf(grid);
+        if (i < 0) {
+          if (textures.length >= MAX_TEXTURES) {
+            addIssue(id, 'error', `At most ${MAX_TEXTURES} different texts can be used in one shape.`);
+            return null;
+          }
+          textures.push(grid);
+          i = textures.length - 1;
+        }
+        return i;
+      },
+      issue: (m) => addIssue(id, 'warning', m),
       input: (k, q) => {
         const edges = inputEdges(doc, id, k);
         for (const e of edges) {
@@ -249,7 +268,7 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
   if (rootId) {
     if (rootDim === 2) {
       // preview a 2D profile as a thin plate on the ground plane
-      const s = compileNode(rootId, ir.vec2(ir.x(p3), ir.z(p3)));
+      const s = compileNode(rootId, ir.vec2(ir.x(p3), ir.neg(ir.z(p3))));
       if (s) {
         const w = ir.vec2(s.d, ir.sub(ir.abs(ir.y(p3)), 0.02));
         root = { d: ir.add(ir.min(ir.maxComp(w), 0), ir.length(ir.max(w, 0))), col: s.col };
@@ -288,7 +307,8 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
     roots: [root.col, sel],
     result: ([c, s]) => `vec4(${c}, ${s})`,
   });
-  const glsl = `${usesNoise ? GLSL_NOISE : ''}\n${mapFn}\n${colFn}`;
+  const texGlsl = textures.map((t, i) => glslTextureHelper(i, t)).join('\n');
+  const glsl = `${usesNoise ? GLSL_NOISE : ''}\n${texGlsl}\n${mapFn}\n${colFn}`;
 
   const xyz = [['x', 'y', 'z']];
   const jsMap = emitJsBody({ args: xyz, roots: [root.d], result: ([d]) => `return ${d[0]};` });
@@ -331,6 +351,7 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
     empty,
     rootId,
     rootDim,
+    textures,
   };
 }
 
@@ -480,13 +501,26 @@ export interface Evaluator {
 }
 
 /** Build CPU evaluators from compiled code (works in workers too). */
+export interface GridLike {
+  data: Float32Array;
+  w: number;
+  h: number;
+  cell: number;
+}
+
 export function makeEvaluator(
-  c: Pick<Compiled, 'jsMap' | 'jsColor' | 'jsPick' | 'paramCount'>,
+  c: Pick<Compiled, 'jsMap' | 'jsColor' | 'jsPick' | 'paramCount'> & { textures?: GridLike[] },
   P?: Float32Array,
 ): Evaluator {
   const params = P ?? new Float32Array(c.paramCount);
+  const grids = c.textures ?? [];
+  const tex = (slot: number, gx: number, gy: number) => sampleGrid(grids[slot], gx, gy);
   const mk = (body: string, args: string) =>
-    new Function('P', 'noise3', `"use strict"; return function(${args}) {\n${body}\n};`)(params, noise3);
+    new Function('P', 'noise3', 'tex', `"use strict"; return function(${args}) {\n${body}\n};`)(
+      params,
+      noise3,
+      tex,
+    );
   return {
     map: mk(c.jsMap, 'x, y, z'),
     color: mk(c.jsColor, 'x, y, z, out'),

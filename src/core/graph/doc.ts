@@ -213,6 +213,8 @@ export function normalizeDoc(raw: unknown): SdfDoc {
         if (p.options.some((o) => o.value === v)) params[p.key] = v;
       } else if (p.kind === 'bool') {
         params[p.key] = !!v;
+      } else if (p.kind === 'text') {
+        if (typeof v === 'string') params[p.key] = [...v].filter((ch) => ch >= ' ').join('').slice(0, p.maxLength);
       } else if (typeof v === 'number' && Number.isFinite(v)) {
         params[p.key] = v;
       }

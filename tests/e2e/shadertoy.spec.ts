@@ -7,6 +7,8 @@ test('the exported Shadertoy shader compiles and renders the shape', async ({ pa
     const res = await page.evaluate((id) => {
       window.sdfForge.loadExample(id);
       const src = window.sdfForge.shadertoy();
+      // shapes with Text need a texture and are exported with an explanation instead
+      if (!src.includes('mainImage')) return { ok: true, colors: 99, skipped: true };
       // wrap like Shadertoy does
       const fs = `#version 300 es
 precision highp float; precision highp int;

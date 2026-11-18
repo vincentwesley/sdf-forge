@@ -26,7 +26,7 @@ export function inlineParams(glsl: string, P: Float32Array): string {
 }
 
 const QUICK_SHAPES = ['sphere', 'box', 'cylinder', 'torus', 'capsule', 'cone'];
-const MORE_SHAPES = ['ellipsoid', 'octahedron', 'hexPrism', 'link'];
+const MORE_SHAPES = ['text', 'ellipsoid', 'octahedron', 'hexPrism', 'link'];
 
 const MODES: { id: ViewMode; label: string; hint: string }[] = [
   { id: 'shaded', label: 'Shaded', hint: 'Lit preview with colours' },
@@ -95,7 +95,12 @@ export function Viewport() {
     // edit (each change recompiles) but it still draws.
     const budget = r.maxUniformVec4s - 40;
     if (scene.compiled.paramCount / 4 > budget) {
-      r.setScene(inlineParams(scene.compiled.glsl, scene.P), 4, scene.compiled.empty);
+      r.setScene(
+        inlineParams(scene.compiled.glsl, scene.P),
+        4,
+        scene.compiled.empty,
+        scene.compiled.textures,
+      );
       if (!warnedInline) {
         warnedInline = true;
         toast(
@@ -104,7 +109,13 @@ export function Viewport() {
           6000,
         );
       }
-    } else r.setScene(scene.compiled.glsl, scene.compiled.paramCount, scene.compiled.empty);
+    } else
+      r.setScene(
+        scene.compiled.glsl,
+        scene.compiled.paramCount,
+        scene.compiled.empty,
+        scene.compiled.textures,
+      );
     setCompiling(r.compiling);
     r.setParams(scene.P);
     r.setFrame({
@@ -379,7 +390,7 @@ export function Viewport() {
               id: t,
               label: getDef(t)!.label,
               desc: getDef(t)!.summary,
-              icon: <NodeIcon type={t} category="shape" size={14} />,
+              icon: <NodeIcon type={t} category={getDef(t)!.category} size={14} />,
               onSelect: () => onAdd(t),
             }))}
           />

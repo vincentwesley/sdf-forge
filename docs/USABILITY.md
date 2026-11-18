@@ -38,7 +38,7 @@ Goal: make a shape they like in a few minutes without reading anything.
 | 2.6 | Exported STL. | Wanted to know it's printable. | Works: result card says "Watertight and manifold — ready to print", with size, volume, grams of PLA, triangle count. |
 | 2.7 | Opened the STL in a slicer (validated with trimesh and the same checks a slicer runs). | Earlier build: a few shapes had vertices at identical positions on pinch points, which slicers weld into non-manifold edges. | **Fixed**: the mesher nudges coincident vertices apart; CI now checks every gallery mesh with position-welding. |
 | 2.8 | On the phone the export form was cramped (labels squeezed, "Ultra" cut off). | | **Fixed**: one-column form on narrow screens. |
-| 2.9 | Wanted text on a keychain. | Not supported. | **Later** (DECISIONS.md): needs font outlines → 2D SDFs. The keychain template uses a raised star instead. |
+| 2.9 | Wanted their name on the keychain. | First version had no text. | **Fixed**: new Text node; the keychain template's name is a Control, and *Add → Text* puts standing letters into any shape. |
 
 ## 3. Experienced shader artist ("Kai", writes raymarchers on Shadertoy)
 

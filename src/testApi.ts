@@ -82,7 +82,7 @@ export const testApi = {
   agreement: (doc: SdfDoc, points: number[]) => {
     const { c, P } = sceneFor(normalizeDoc(doc));
     const pts = new Float32Array(points);
-    const gpu = gpuEvaluate(c.glsl, c.paramCount, P, pts);
+    const gpu = gpuEvaluate(c.glsl, c.paramCount, P, pts, c.textures);
     const ev = makeEvaluator(c, P);
     const cpu: number[] = [];
     const cpuColor: number[] = [];
@@ -129,6 +129,7 @@ export const testApi = {
         title: s.doc.title,
         mmPerUnit: s.doc.settings.mmPerUnit,
         material: s.doc.settings.material,
+        textures: c.textures,
       },
       { format, edgeLength: ext / cells },
     );

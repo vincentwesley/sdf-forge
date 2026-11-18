@@ -31,7 +31,8 @@ export const extrude: NodeDef = {
     return { r, ha: h / 2 - r };
   },
   emit: ({ ir, p, input, derived, empty }) => {
-    const s = input('profile', ir.vec2(ir.x(p), ir.z(p)));
+    // profile Y points along world −Z so text and shapes read correctly when seen from above
+    const s = input('profile', ir.vec2(ir.x(p), ir.neg(ir.z(p))));
     if (!s) return empty();
     const r = derived('r');
     const w = ir.vec2(ir.add(s.d, r), ir.sub(ir.abs(ir.y(p)), derived('ha')));
@@ -42,7 +43,7 @@ export const extrude: NodeDef = {
     const b = input('profile');
     if (!b) return null;
     const h = (params.height as number) / 2;
-    return { min: [b.min[0], -h, b.min[1]], max: [b.max[0], h, b.max[1]] };
+    return { min: [b.min[0], -h, -b.max[1]], max: [b.max[0], h, -b.min[1]] };
   },
   credit: IQ,
 };

@@ -67,7 +67,10 @@ export function AboutDialog() {
           Node editor: React Flow / xyflow (MIT). UI: React (MIT), Zustand (MIT), Lucide icons (ISC), Inter
           typeface (SIL OFL 1.1).
         </li>
-        <li>Video encoding: Mediabunny (MPL-2.0).</li>
+        <li>
+          Video encoding: Mediabunny (MPL-2.0). Text: glyph outlines of Inter ExtraBold (SIL OFL 1.1) read
+          with opentype.js (MIT).
+        </li>
       </ul>
       <p className="muted" style={{ fontSize: 12, marginTop: 14 }}>
         Everything runs in your browser. Your work is saved in this browser only; share links carry the graph

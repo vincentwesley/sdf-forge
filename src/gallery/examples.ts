@@ -128,7 +128,7 @@ export const EXAMPLES: Example[] = [
     id: 'keychain',
     title: 'Keychain tag',
     description:
-      'A rounded tag with a key-ring hole and a raised star. Size, thickness and the hole are in Controls.',
+      'A name tag with a key-ring hole and raised letters. Type your name in Controls, then export an STL.',
     tags: ['printable'],
     build: () => {
       const b = new DocBuilder('Keychain tag', { mmPerUnit: 10 });
@@ -137,26 +137,26 @@ export const EXAMPLES: Example[] = [
       const hole = b.add('circle', { radius: 0.3, offset: [-1.9, 0], color: C.blue }, undefined, 'Ring hole');
       const holed = b.add('subtract', { smooth: 0.05 }, { base: r, cutter: hole });
       const tag = b.add('extrude', { height: 0.35, rounding: 0.08, position: [0, 0.175, 0] }, [holed], 'Tag');
-      const star = b.add('star', {
-        points: 5,
-        radius: 0.85,
-        inner: 0.45,
-        offset: [0.6, 0],
-        angle: 90,
-        color: C.yellow,
-      });
+      const name = b.add(
+        'text',
+        { text: 'HELLO', size: 0.8, offset: [0.45, 0], color: C.yellow },
+        undefined,
+        'Name',
+      );
       const raised = b.add(
         'extrude',
-        { height: 0.2, rounding: 0.05, position: [0, 0.42, 0] },
-        [star],
-        'Raised star',
+        { height: 0.2, rounding: 0.04, position: [0, 0.42, 0] },
+        [name],
+        'Raised name',
       );
       const u = b.add('union', { smooth: 0.03 }, [tag, raised]);
       b.output(u);
       b.pin(r, 'size', 'Size')
         .pin(tag, 'height', 'Thickness')
         .pin(hole, 'radius', 'Hole radius')
-        .pin(hole, 'offset', 'Hole position');
+        .pin(hole, 'offset', 'Hole position')
+        .pin(name, 'text', 'Name')
+        .pin(name, 'size', 'Letter height');
       return b.done();
     },
   },

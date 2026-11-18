@@ -40,8 +40,7 @@ export function AddNodeMenu() {
   const list = useMemo(() => {
     if (!menu) return [];
     const from = menu.from;
-    const ranked = (cat: string) =>
-      ALL_NODES.filter((d) => d.category === cat && score(d, q) > 0);
+    const ranked = (cat: string) => ALL_NODES.filter((d) => d.category === cat && score(d, q) > 0);
     const compatible = CATEGORY_ORDER.flatMap((cat) =>
       ranked(cat).filter((d) => {
         if (!from) return true;

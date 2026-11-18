@@ -37,7 +37,8 @@ export type Op =
   | 'gt'
   | 'and'
   | 'select'
-  | 'noise3';
+  | 'noise3'
+  | 'tex2d'; // sample texture slot n at grid coordinates (vec2)
 
 export interface Expr {
   readonly id: number;
@@ -321,6 +322,11 @@ export class IRBuilder {
 
   // ---- builtins -------------------------------------------------------------
   /** Value noise in [-1, 1] with an integer hash, identical on GPU and CPU. */
+  /** Sample a distance grid registered by the compiler (slot) at grid coordinates. */
+  tex2d(slot: number, g: Expr): Expr {
+    if (g.ty !== 'v2') throw new Error('tex2d needs vec2');
+    return this.make('tex2d', 'f', [g], slot);
+  }
   noise3(p: Expr): Expr {
     if (p.ty !== 'v3') throw new Error('noise3 needs vec3');
     return this.make('noise3', 'f', [p]);

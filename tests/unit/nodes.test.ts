@@ -311,3 +311,39 @@ describe('every node: bounds are conservative and the step bound is safe', () =>
     });
   }
 });
+
+describe('text', () => {
+  it('matches a brute-force distance at grid samples and is negative inside letters', async () => {
+    const { textGrid, sampleGrid } = await import('../../src/core/text');
+    const g = textGrid('Hi')!;
+    expect(g).toBeTruthy();
+    // grid points are reproduced exactly by sampling
+    for (const [i, j] of [
+      [3, 4],
+      [g.w >> 1, g.h >> 1],
+      [g.w - 2, g.h - 3],
+    ])
+      expect(sampleGrid(g, i, j)).toBeCloseTo(g.data[j * g.w + i], 6);
+    // the middle of the "H" stem is inside; far away is outside with the right distance
+    const gx = (x: number) => (x - g.x0) / g.cell;
+    const gy = (y: number) => (y - g.y0) / g.cell;
+    const left = g.bounds[0];
+    expect(sampleGrid(g, gx(left + 0.05), gy(0))).toBeLessThan(0);
+    const far = sampleGrid(g, gx(g.bounds[2] + 5), gy(0));
+    expect(far).toBeGreaterThan(4.9);
+    expect(far).toBeLessThan(5.1);
+  });
+  it('compiles into a text graph with a texture, and an empty string is empty', () => {
+    const g = new G();
+    const t = g.node('text', { text: 'SDF', size: 1 });
+    const x = g.node('extrude', { height: 0.3 });
+    g.link(t, x, 'profile').out(x);
+    const e = evaluator(g.doc);
+    expect(e.bounds.bounds!.max[0]).toBeGreaterThan(1);
+    const g2 = new G();
+    const t2 = g2.node('text', { text: '' });
+    const x2 = g2.node('extrude', {});
+    g2.link(t2, x2, 'profile').out(x2);
+    expect(evaluator(g2.doc).bounds.bounds).toBeNull();
+  });
+});

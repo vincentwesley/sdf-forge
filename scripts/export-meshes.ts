@@ -10,6 +10,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import Module from 'manifold-3d';
+import '../tests/setup';
 import { analyze, compile, makeEvaluator, packParams } from '../src/core/compile';
 import { type SdfDoc } from '../src/core/graph/doc';
 import { EXAMPLES } from '../src/gallery/examples';

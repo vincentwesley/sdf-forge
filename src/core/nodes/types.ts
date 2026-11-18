@@ -68,7 +68,13 @@ export interface BoolParam extends ParamBase {
   kind: 'bool';
   default: boolean;
 }
-export type ParamDef = FloatParam | IntParam | Vec3Param | Vec2Param | ColorParam | EnumParam | BoolParam;
+export interface TextParam extends ParamBase {
+  kind: 'text';
+  default: string;
+  maxLength: number;
+}
+export type ParamDef =
+  FloatParam | IntParam | Vec3Param | Vec2Param | ColorParam | EnumParam | BoolParam | TextParam;
 
 export interface InputDef {
   key: string;
@@ -103,6 +109,10 @@ export interface EmitCtx {
   derived(name: string): Expr;
   /** a value that means "no shape here" */
   empty(): ShapeVal;
+  /** register a distance grid (text) and return its texture slot, or null if too many */
+  texture(grid: import('../text').TextGrid): number | null;
+  /** report a problem on this node */
+  issue(message: string): void;
 }
 
 /** Extra information available when deriving uniforms on the CPU. */

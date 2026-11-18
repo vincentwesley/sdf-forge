@@ -113,6 +113,9 @@ export function emitGlslFunction(spec: GlslFnSpec, opts: GlslOptions = {}): stri
       case 'noise3':
         expr = `sfNoise(${a[0]})`;
         break;
+      case 'tex2d':
+        expr = `sfTex${e.n}(${a[0]})`;
+        break;
       default:
         throw new Error(`glsl: unhandled op ${(e as Expr).op}`);
     }

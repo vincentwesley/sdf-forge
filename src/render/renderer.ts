@@ -1,6 +1,7 @@
 import { COPY_FRAG, VERT, fragmentSource } from './shaders';
 import { type OrbitCamera, cameraBasis, cameraMatrix } from './camera';
 import type { AABB } from '../core/nodes/types';
+import type { TextGrid } from '../core/text';
 
 export type ViewMode = 'shaded' | 'normals' | 'print' | 'cost';
 export type MaterialStyle = 'clay' | 'glossy' | 'metal';
@@ -96,6 +97,7 @@ export class Renderer {
   private lost = false;
   private disposed = false;
   private emptyScene = true;
+  private textures: { grid: TextGrid; tex: WebGLTexture }[] = [];
   /** device pixel ratio cap */
   maxDpr = 2;
   onError: ((msg: string | null) => void) | null = null;
@@ -195,8 +197,9 @@ export class Renderer {
   }
 
   /** Set the generated scene code. Recompiles only if it changed. */
-  setScene(sceneGlsl: string, paramCount: number, empty: boolean) {
+  setScene(sceneGlsl: string, paramCount: number, empty: boolean, textures: TextGrid[] = []) {
     this.emptyScene = empty;
+    this.setTextures(textures);
     const vec4s = Math.max(1, Math.ceil(paramCount / 4));
     const src = fragmentSource(sceneGlsl, vec4s);
     if (src === this.sceneSource) return;
@@ -208,6 +211,22 @@ export class Renderer {
     this.pending = p;
     if (!this.parallel) this.promotePending();
     this.requestRender();
+  }
+
+  private setTextures(grids: TextGrid[]) {
+    const gl = this.gl;
+    if (grids.length === this.textures.length && grids.every((g, i) => this.textures[i].grid === g)) return;
+    for (const t of this.textures) gl.deleteTexture(t.tex);
+    this.textures = grids.map((grid) => {
+      const tex = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R32F, grid.w, grid.h, 0, gl.RED, gl.FLOAT, grid.data);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      return { grid, tex };
+    });
+    this.reset();
   }
 
   /** True while a new shader is compiling. */
@@ -448,6 +467,12 @@ export class Renderer {
     gl.uniform1f(this.u(p, 'uShadowQuality'), idle ? 1 : 0);
     gl.uniform1f(this.u(p, 'uTransparentBg'), f.transparent ? 1 : 0);
     gl.uniform1f(this.u(p, 'uFrame'), this.accumCount % 64);
+    this.textures.forEach((t, i) => {
+      gl.activeTexture(gl.TEXTURE1 + i);
+      gl.bindTexture(gl.TEXTURE_2D, t.tex);
+      gl.uniform1i(this.u(p, `uT${i}`), 1 + i);
+    });
+    gl.activeTexture(gl.TEXTURE0);
   }
 
   /**

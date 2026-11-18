@@ -19,7 +19,7 @@ function jsNum(v: number): string {
   return v < 0 ? `(${s})` : s;
 }
 
-/** Returns the function body; free variables: P (Float32Array/number[]), noise3. */
+/** Returns the function body; free variables: P (Float32Array/number[]), noise3, tex. */
 export function emitJsBody(spec: JsFnSpec, opts: { inlineParams?: ArrayLike<number> } = {}): string {
   const order = schedule(spec.roots);
   const comps = new Map<number, string[]>();
@@ -104,6 +104,9 @@ export function emitJsBody(spec: JsFnSpec, opts: { inlineParams?: ArrayLike<numb
         break;
       case 'noise3':
         out = [`noise3(${a[0].join(', ')})`];
+        break;
+      case 'tex2d':
+        out = [`tex(${e.n}, ${a[0].join(', ')})`];
         break;
       default:
         throw new Error(`js: unhandled op ${(e as Expr).op}`);

@@ -151,6 +151,7 @@ function ModelTab() {
           title: s.doc.title,
           mmPerUnit: s.doc.settings.mmPerUnit,
           material: s.doc.settings.material,
+          textures: sc.compiled.textures,
         },
         { format, edgeLength: edge, simplify: simplify ? edge * 0.12 : 0 },
       );

@@ -97,4 +97,4 @@ watertight/manifold meshes; real-world size in millimetres; walls thicker than ~
 
 ## 8. Licences of things reused
 
-See the README "Credits" section. Summary: React (MIT), @xyflow/react (MIT), Zustand (MIT), manifold-3d (Apache-2.0), lucide icons (ISC), Inter font (SIL OFL 1.1), Inigo Quilez formulas (MIT, credited), hg_sdf ideas (MIT option, credited). Test-only: Playwright (Apache-2.0), axe-core (MPL-2.0, test-only, not shipped), trimesh (MIT), glTF-Validator (Apache-2.0).
+See the README "Credits" section. Summary: React (MIT), @xyflow/react (MIT), Zustand (MIT), manifold-3d (Apache-2.0), lucide icons (ISC), Inter font (SIL OFL 1.1), Inigo Quilez formulas (MIT, credited), hg_sdf ideas (MIT option, credited). opentype.js (MIT) + Inter ExtraBold WOFF (OFL) for Text. Test-only: Playwright (Apache-2.0), axe-core (MPL-2.0, test-only, not shipped), trimesh (MIT), glTF-Validator (Apache-2.0).

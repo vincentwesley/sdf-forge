@@ -5,6 +5,11 @@ All notable changes to SDF Forge are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- Text node (2D profile) built from real glyph outlines; *Add → Text* from the toolbar; the keychain template now carries a name.
+- Shell *Opening* option and Cut *measured from* top/bottom, so printable templates stay correct when resized.
+- Copy/paste of nodes, a *Blend with the other shapes* control on every shape, print-check hint in the export dialog.
+
 ## [1.0.0] - 2026-11-18
 
 ### Added

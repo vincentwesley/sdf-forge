@@ -1,5 +1,6 @@
 import type { NodeDef } from './types';
 import { sdBox } from './lib';
+import { MAX_TEXT, fontReady, textGrid } from '../text';
 
 const IQ2 = 'Inigo Quilez, iquilezles.org/articles/distfunctions2d (MIT)';
 const flat = (x: number, y: number) => ({
@@ -151,3 +152,54 @@ export const star: NodeDef = {
 };
 
 export const SHAPES_2D = [circle, rect, polygon, star];
+
+export const text: NodeDef = {
+  type: 'text',
+  label: 'Text',
+  category: 'profile',
+  summary: '2D text profile — names, labels, signs.',
+  help:
+    'Flat text in a bold typeface (Inter ExtraBold). "Letter height" is the height of capital letters. Extrude it for a name tag or sign, or Subtract an extruded text from a shape to engrave it.' +
+    PROFILE_NOTE,
+  keywords: ['text', 'letters', 'name', 'word', 'label', 'engrave', 'emboss', 'font', 'type'],
+  inputs: [],
+  output: 'sdf2',
+  transform: 2,
+  colored: true,
+  exactness: 'approx',
+  params: [
+    { key: 'text', label: 'Text', kind: 'text', default: 'Hello', maxLength: MAX_TEXT, structural: true },
+    {
+      key: 'size',
+      label: 'Letter height',
+      kind: 'float',
+      unit: 'length',
+      default: 0.8,
+      min: 0.01,
+      softMax: 3,
+    },
+  ],
+  emit: ({ ir, p, value, num, texture, empty, issue }) => {
+    const grid = textGrid(String(value('text') ?? ''));
+    if (!grid) {
+      if (!fontReady()) issue('The font is still loading.');
+      return empty();
+    }
+    const slot = texture(grid);
+    if (slot === null) return empty();
+    const size = num('size');
+    const g = ir.div(ir.sub(ir.div(p, size), ir.vec2(grid.x0, grid.y0)), grid.cell);
+    return { d: ir.mul(ir.tex2d(slot, g), size), col: ir.c(0) };
+  },
+  bounds: ({ params }) => {
+    const g = textGrid(String(params.text ?? ''));
+    if (!g) return null;
+    const s = params.size as number;
+    return { min: [g.bounds[0] * s, g.bounds[1] * s, 0], max: [g.bounds[2] * s, g.bounds[3] * s, 0] };
+  },
+  // bilinear interpolation of an exact distance grid can slightly exceed slope 1 near the medial axis
+  lipschitz: () => 1.25,
+  credit: 'Glyphs: Inter by Rasmus Andersson (SIL OFL 1.1), read with opentype.js (MIT)',
+};
+
+SHAPES_2D.push(text);

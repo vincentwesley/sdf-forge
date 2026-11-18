@@ -368,8 +368,38 @@ export function BoolField({ def, value, onChange, onCommit, pinned, onTogglePin,
   );
 }
 
+export function TextField({ def, value, onChange, onCommit, pinned, onTogglePin, label }: FieldProps) {
+  const id = useId();
+  const name = label ?? def.label;
+  const [text, setText] = useState(String(value ?? ''));
+  useEffect(() => setText(String(value ?? '')), [value]);
+  const max = def.kind === 'text' ? def.maxLength : 32;
+  return (
+    <div className="field" title={def.help}>
+      <label className="field-label" htmlFor={id}>
+        {name}
+      </label>
+      <input
+        id={id}
+        className="text-input"
+        value={text}
+        maxLength={max}
+        onChange={(e) => {
+          setText(e.target.value);
+          onChange(e.target.value);
+        }}
+        onBlur={onCommit}
+        onKeyDown={(e) => e.key === 'Enter' && onCommit()}
+      />
+      <PinButton pinned={pinned} onToggle={onTogglePin} label={name} />
+    </div>
+  );
+}
+
 export function ParamField(props: FieldProps) {
   switch (props.def.kind) {
+    case 'text':
+      return <TextField {...props} />;
     case 'float':
     case 'int':
       return <NumberField {...props} />;

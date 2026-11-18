@@ -32,6 +32,7 @@ import {
   Waves,
   Hash,
   Globe,
+  Type,
   type LucideIcon,
 } from 'lucide-react';
 import type { Category } from '../core/nodes/types';
@@ -51,6 +52,7 @@ export const NODE_ICONS: Record<string, LucideIcon> = {
   rect: RectangleHorizontal,
   polygon: Pentagon,
   star: Star,
+  text: Type,
   union: Combine,
   subtract: SquareMinus,
   intersect: SquaresIntersect,

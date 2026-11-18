@@ -24,7 +24,7 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
 | Lattice (gyroid etc.) infill op | **Build** | Iconic for 3D printing; bounded by its input so meshing stays finite. |
 | 2D profiles + Extrude/Revolve | **Build** | Vases, coasters, tags — the backbone of printable objects. |
 | Free-text "describe a shape" → graph | Rejected | Needs an AI model and keys/server (violates free & keyless) or a toy keyword matcher that would disappoint. Replaced by searchable gallery/templates. |
-| SDF text (names on keychains) | Later | Needs font outlines → 2D polygon SDF per glyph on GPU and CPU; worth doing properly in a later session. |
+| SDF text (names on keychains) | **Build** (second iteration) | Name tags are the most popular parametric print. Built from real glyph outlines (bundled Inter ExtraBold + opentype.js) into an exact distance grid that GPU and CPU sample identically. |
 | Spline profile editor for Revolve | Later | Big UI job; regular polygon/rounded profiles + shell + twist cover most vases. |
 | Sculpt brushes (add/remove clay) | Later | Requires a voxel/brush layer outside the graph model. |
 | Image-based materials / triplanar textures | Later | GLB textures and UVs from SDF meshes need unwrapping; vertex colours chosen instead. |
@@ -63,3 +63,10 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     `src/core/mesh/mesh.ts`.
 14. **Any change counts as interaction for the renderer** (camera, slider drags), and idle refinement adapts to the
     measured frame cost, so the page stays responsive on software rendering.
+15. **Text = exact distance grid from glyph outlines** (vs canvas rasterisation + distance transform, or per-glyph
+    polygon SDFs evaluated in the shader). Canvas text differs between machines and would break share links and CI;
+    polygon loops in GLSL are slow for long strings. The grid (40 cells per letter height) is computed once per string,
+    uploaded as an R32F texture and sampled with manual bilinear `texelFetch` (no float-filtering extension needed),
+    and the CPU uses the identical formula. Shadertoy export is not available for graphs with text (it would need a
+    texture channel); the code tab says so.
+16. **Extrude maps profile Y to world −Z** so profiles (and text) read correctly when seen from above.

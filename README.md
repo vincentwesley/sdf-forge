@@ -31,6 +31,8 @@ Made by **Vin** · **Vin's Atelier**.
   - **GLB** (glTF 2.0) with normals and vertex colours, and **OBJ**, for Blender, game engines and the web.
   - **PNG** renders up to 4K (transparent background optional) and **turntable videos** (MP4 or WebM).
   - **Shader code** — a complete Shadertoy shader or just the GLSL distance function.
+- **Write on things.** A Text node turns any word into a profile: extrude it into a sign or name tag, or subtract
+  it to engrave.
 - **Customise templates.** Pin any setting to the *Controls* panel. Printable templates (vase, planter, keychain,
   ring, bowl, gyroid sphere) come with their key sizes pinned, so you can make one your own without touching the graph.
 - **Share.** A link holds the whole graph — no account, no server, nothing uploaded.
@@ -95,7 +97,8 @@ and dialogs, a keyboard alternative to dragging wires), follows your light/dark 
   [Khronos PBR Neutral](https://github.com/KhronosGroup/ToneMapping) (Apache-2.0) tone mapping.
 - [React](https://react.dev) (MIT), [React Flow / xyflow](https://reactflow.dev) (MIT), [Zustand](https://github.com/pmndrs/zustand) (MIT),
   [Lucide](https://lucide.dev) icons (ISC), [Inter](https://rsms.me/inter/) typeface (SIL OFL 1.1),
-  [Mediabunny](https://mediabunny.dev) (MPL-2.0) for video.
+  [Mediabunny](https://mediabunny.dev) (MPL-2.0) for video, [opentype.js](https://opentype.js.org) (MIT) for
+  reading glyph outlines.
 - Testing: [Playwright](https://playwright.dev), [axe-core](https://github.com/dequelabs/axe-core), [trimesh](https://trimesh.org),
   [glTF-Validator](https://github.com/KhronosGroup/glTF-Validator), [Vitest](https://vitest.dev).
 

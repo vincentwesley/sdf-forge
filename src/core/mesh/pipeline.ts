@@ -16,6 +16,8 @@ export interface ExportInput {
   /** millimetres per scene unit (after any resize) */
   mmPerUnit: number;
   material: 'clay' | 'glossy' | 'metal';
+  /** distance grids used by text nodes */
+  textures?: { data: Float32Array; w: number; h: number; cell: number }[];
 }
 
 export interface ExportOptions {
