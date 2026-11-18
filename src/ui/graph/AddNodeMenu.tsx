@@ -6,15 +6,18 @@ import { NodeIcon } from '../meta';
 import { actions, addNodeAt, useEditor } from '../../state/store';
 import { canConnect, makeNode } from '../../core/graph/doc';
 
-function matches(def: NodeDef, q: string) {
-  if (!q) return true;
-  const s = q.toLowerCase();
-  return (
-    def.label.toLowerCase().includes(s) ||
-    def.type.toLowerCase().includes(s) ||
-    (def.keywords ?? []).some((k) => k.includes(s)) ||
-    def.summary.toLowerCase().includes(s)
-  );
+/** Relevance of a node for a search: 0 = no match, higher is better. */
+function score(def: NodeDef, q: string): number {
+  if (!q) return 1;
+  const s = q.toLowerCase().trim();
+  const label = def.label.toLowerCase();
+  if (label === s) return 100;
+  if (label.startsWith(s)) return 80;
+  if (label.split(/\s+/).some((w) => w.startsWith(s))) return 60;
+  if ((def.keywords ?? []).some((k) => k.startsWith(s))) return 40;
+  if (label.includes(s) || (def.keywords ?? []).some((k) => k.includes(s))) return 20;
+  if (def.summary.toLowerCase().includes(s)) return 10;
+  return 0;
 }
 
 /** Searchable "add node" popup. When opened from a dragged wire it lists only compatible nodes. */
@@ -37,8 +40,10 @@ export function AddNodeMenu() {
   const list = useMemo(() => {
     if (!menu) return [];
     const from = menu.from;
-    return CATEGORY_ORDER.flatMap((cat) =>
-      ALL_NODES.filter((d) => d.category === cat && matches(d, q)).filter((d) => {
+    const ranked = (cat: string) =>
+      ALL_NODES.filter((d) => d.category === cat && score(d, q) > 0);
+    const compatible = CATEGORY_ORDER.flatMap((cat) =>
+      ranked(cat).filter((d) => {
         if (!from) return true;
         // test compatibility against a temporary node
         const tmp = makeNode(d.type, 0, 0, {}, '__tmp');
@@ -48,6 +53,8 @@ export function AddNodeMenu() {
         return !!d.output && canConnect(trial, '__tmp', from.node, from.handle).ok;
       }),
     );
+    // with a query, best matches first (stable within equal scores)
+    return q ? [...compatible].sort((a, b) => score(b, q) - score(a, q)) : compatible;
   }, [menu, q, doc]);
 
   useEffect(() => {
@@ -111,7 +118,7 @@ export function AddNodeMenu() {
       <div id="add-node-list" role="listbox" aria-label="Nodes">
         {list.length === 0 && <div className="menu-section">No matching nodes</div>}
         {list.map((d, i) => {
-          const head = d.category !== lastCat ? CATEGORY_INFO[d.category].label : null;
+          const head = !q && d.category !== lastCat ? CATEGORY_INFO[d.category].label : null;
           lastCat = d.category;
           return (
             <div key={d.type}>

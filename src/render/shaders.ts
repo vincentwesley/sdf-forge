@@ -220,7 +220,7 @@ vec3 shade(vec3 p, vec3 rd, float t) {
     float dScene = map(p);
     float s = 1.0 - smoothstep(0.0, max(0.01, 0.004 * t), abs(mc.w) - abs(dScene));
     // a light glow and rim in the accent colour; keeps the shape's own colour readable
-    col = col * (1.0 - 0.18 * s) + uSelColor * s * (0.12 + 0.9 * rim);
+    col = col * (1.0 - 0.12 * s) + uSelColor * s * (0.07 + 0.75 * rim);
   }
   return col;
 }
