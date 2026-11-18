@@ -397,14 +397,14 @@ export const EXAMPLES: Example[] = [
     id: 'morph',
     title: 'Sphere to cube',
     description:
-      'Morph mixes two distance fields. Slide Amount from 0% to 100% to turn a sphere into a cube.',
+      'Morph mixes two distance fields. Press Play (top right of the 3D view) to watch the sphere become a cube, or slide Morph yourself.',
     tags: ['learn'],
     build: () => {
       const b = new DocBuilder('Sphere to cube');
       const s = b.add('sphere', { radius: 1.1, color: C.coral });
       const c = b.add('box', { size: [1.8, 1.8, 1.8], rounding: 0.05, color: C.blue });
       const m = b.add('morph', { amount: 0.5 }, { a: s, b: c });
-      b.output(m).pin(m, 'amount', 'Morph');
+      b.output(m).pin(m, 'amount', 'Morph', { from: 0, to: 1, seconds: 4 });
       return b.done();
     },
   },

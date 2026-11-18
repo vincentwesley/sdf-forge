@@ -14,6 +14,7 @@ import { encodeDoc, decodeDoc } from './core/share';
 import { exportMesh } from './workers/meshClient';
 import { shapeColors, type MeshFormat } from './core/mesh/pipeline';
 import { shadertoySource } from './core/shadertoy';
+import { getScene } from './state/scene';
 
 function sceneFor(doc: SdfDoc) {
   const c = compile(doc);
@@ -72,6 +73,13 @@ export const testApi = {
     return tmp.toDataURL(type, 0.86);
   },
   rendererStats: () => getActiveRenderer()?.stats ?? null,
+  rendererParams: () => getActiveRenderer()?.currentParams ?? [],
+  /** uniform slot of a node's param in the current scene */
+  paramSlot: (node: string, key: string) => {
+    const s = store.getState();
+    const c = getScene(s.doc, s.viewRoot, s.selection[0] ?? null).compiled;
+    return c.slots.find((x) => x.node === node && x.key === key && !x.derived)?.offset ?? -1;
+  },
   compiling: () => getActiveRenderer()?.compiling ?? true,
   setContinuous: (on: boolean) => {
     const r = getActiveRenderer();

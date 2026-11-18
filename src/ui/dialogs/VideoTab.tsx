@@ -3,6 +3,8 @@ import { Film, Loader2 } from 'lucide-react';
 import { getActiveRenderer } from '../../render/registry';
 import { toast, useEditor, store } from '../../state/store';
 import { downloadBlob, safeFilename } from '../../workers/meshClient';
+import { animatedParams, getScene } from '../../state/scene';
+import { hasAnimation } from '../../core/animation';
 
 const SIZES = [
   { id: 'sm', label: '480 × 480', w: 480, h: 480 },
@@ -17,8 +19,21 @@ export function VideoTab() {
   const [seconds, setSeconds] = useState(6);
   const [progress, setProgress] = useState<number | null>(null);
   const title = useEditor((s) => s.doc.title);
+  const animated = useEditor((s) => hasAnimation(s.doc));
+  const [animate, setAnimate] = useState(true);
+  const [orbit, setOrbit] = useState(true);
   const supported = typeof VideoEncoder !== 'undefined';
   const cancelRef = useRef(false);
+
+  /** Put the scene's own values back after rendering animated frames. */
+  const restoreParams = () => {
+    const r = getActiveRenderer();
+    if (!r) return;
+    const s = store.getState();
+    const sc = getScene(s.doc, s.viewRoot, s.selection[0] ?? null);
+    r.setParams(sc.P);
+    r.updateFrame({ bounds: sc.analysis.bounds, lipschitz: sc.analysis.lipschitz });
+  };
 
   const run = async () => {
     const r = getActiveRenderer();
@@ -44,18 +59,26 @@ export function VideoTab() {
       output.addVideoTrack(source, { frameRate: fps });
       output.setMetadataTags?.({ title, comment: "Made with SDF Forge by Vin's Atelier" });
       await output.start();
-      const cam = store.getState().camera;
+      const st = store.getState();
+      const cam = st.camera;
       const total = seconds * fps;
+      const withAnim = animated && animate;
       for (let i = 0; i < total; i++) {
         if (cancelRef.current) break;
+        if (withAnim) {
+          const a = animatedParams(st.doc, null, null, i / fps);
+          r.setParams(a.P);
+          r.updateFrame({ bounds: a.analysis.bounds, lipschitz: a.analysis.lipschitz });
+        }
         const gl = r.renderOffline(s.w, s.h, {
           frames: 4,
-          camera: { ...cam, yaw: cam.yaw + (i / total) * Math.PI * 2 },
+          camera: orbit ? { ...cam, yaw: cam.yaw + (i / total) * Math.PI * 2 } : cam,
         });
         ctx.drawImage(gl, 0, 0);
         await source.add(i / fps, 1 / fps);
         if (i % 3 === 0) setProgress(i / total);
       }
+      if (withAnim) restoreParams();
       r.endOffline();
       if (cancelRef.current) {
         await output.cancel();
@@ -70,6 +93,7 @@ export function VideoTab() {
       );
       toast(`Saved ${mp4 ? 'MP4' : 'WebM'} video`, 'success');
     } catch (e) {
+      restoreParams();
       getActiveRenderer()?.endOffline();
       toast(`Video export failed: ${(e as Error).message}`, 'error', 6000);
     } finally {
@@ -121,9 +145,26 @@ export function VideoTab() {
           ))}
         </div>
       </div>
+      <div className="form-row">
+        <span className="label">Motion</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+          <label className="toggle">
+            <input type="checkbox" checked={orbit} onChange={(e) => setOrbit(e.target.checked)} />
+            Turn around the shape
+          </label>
+          {animated && (
+            <label className="toggle">
+              <input type="checkbox" checked={animate} onChange={(e) => setAnimate(e.target.checked)} />
+              Play the animated Controls
+            </label>
+          )}
+        </div>
+      </div>
       <p className="muted" style={{ fontSize: 12 }}>
-        One full turn around the shape from the current camera angle, 30 frames per second. MP4 where your
-        browser can encode it, otherwise WebM.
+        {orbit
+          ? 'One full turn around the shape from the current camera angle'
+          : 'From the current camera angle'}
+        , 30 frames per second. MP4 where your browser can encode it, otherwise WebM.
       </p>
       {progress !== null && (
         <div style={{ margin: '10px 0' }} role="status" aria-live="polite">

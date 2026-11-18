@@ -1,5 +1,6 @@
 import { defaultParams, getDef, paramsOf } from '../nodes/registry';
 import { sanitizePoints } from '../profile';
+import { isAnimatable, sanitizeAnim } from '../animation';
 import type { Dim, ParamValue } from '../nodes/types';
 
 export interface GNode {
@@ -25,6 +26,8 @@ export interface Pinned {
   param: string;
   /** label shown in the Controls panel (defaults to the param label) */
   label?: string;
+  /** optional animation of this Control (see src/core/animation.ts) */
+  anim?: import('../animation').PinAnim;
 }
 
 export type MaterialStyle = 'clay' | 'glossy' | 'metal';
@@ -269,11 +272,16 @@ export function normalizeDoc(raw: unknown): SdfDoc {
     title: typeof d.title === 'string' && d.title.trim() ? d.title.slice(0, 80) : 'Untitled shape',
     nodes,
     edges: removeCycles(nodes, edges),
-    pinned: pinned.map((p) => ({
-      node: p.node,
-      param: p.param,
-      ...(p.label ? { label: String(p.label).slice(0, 40) } : {}),
-    })),
+    pinned: pinned.map((p) => {
+      const def = paramsOf(nodes.find((n) => n.id === p.node)!.type).find((x) => x.key === p.param);
+      const anim = isAnimatable(def) ? sanitizeAnim(p.anim) : null;
+      return {
+        node: p.node,
+        param: p.param,
+        ...(p.label ? { label: String(p.label).slice(0, 40) } : {}),
+        ...(anim ? { anim } : {}),
+      };
+    }),
     settings: {
       mmPerUnit: Number.isFinite(s.mmPerUnit) && s.mmPerUnit! > 0 ? s.mmPerUnit! : DEFAULT_SETTINGS.mmPerUnit,
       material: s.material === 'glossy' || s.material === 'metal' ? s.material : 'clay',

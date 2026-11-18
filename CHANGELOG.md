@@ -6,6 +6,8 @@ All notable changes to SDF Forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Animated Controls**: click *Animate* on a pinned setting to swing it between two values (From, To, seconds per cycle, eased). The 3D view gets a Play button, and turntable videos can record the animation, with or without orbiting. Animations are stored in share links. The document and undo history are never touched while playing. *Sphere to cube* now animates.
+- The saved light/dark theme is applied before the first paint (no dark flash on load).
 - **Profile node**: draw your own 2D outline. Drag points, add them with the + on an edge, switch each point between a sharp corner and a smooth curve, and use the keyboard for all of it. Spin it with Revolve (vases, bottles, chess pieces) or extrude it (brackets). New gallery examples: *Chess pawn* and *Shelf bracket*.
 - **Studio reflections** on the Glossy and Metal materials, from the CC0 “Studio Small 09” HDRI (Poly Haven), pre-filtered per roughness into a 44 KB mip chain (`scripts/make_env.py`). It turns with the key light and falls back to the old gradient if it can't load.
 - **3MF export** for modern slicers: millimetres, a colour palette taken from the shapes (one entry per filament colour), credit metadata and a preview thumbnail, compressed to about a fifth of the STL size. Validated in CI with trimesh and the 3MF Consortium's lib3mf (strict mode).

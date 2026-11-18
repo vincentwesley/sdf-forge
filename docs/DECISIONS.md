@@ -87,3 +87,9 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     polygon distance over that polygon. Dragging a point never recompiles; only adding or removing points, or
     switching a point between sharp and smooth, changes the code. A flat number list fits the existing `ParamValue`,
     share links and history unchanged. At most 16 points, so the unrolled shader stays small.
+20. **Animation drives pinned Controls, never the document** (vs. keyframes on any node, or writing animated values
+    into the doc). Each animated Control swings From → To → From in one cycle, eased with a cosine so loops are
+    seamless. A frame is made by applying the values to a copy of the document and re-packing the uniforms and
+    bounds. Only plain numbers can be animated, so playing never recompiles, and undo history, autosave and model
+    exports are unaffected. Animations live on the pin, so share links carry them. Nothing plays until the user
+    presses Play, which respects reduced motion.

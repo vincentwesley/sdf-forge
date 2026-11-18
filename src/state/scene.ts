@@ -8,6 +8,7 @@ import {
   packParams,
 } from '../core/compile';
 import type { SdfDoc } from '../core/graph/doc';
+import { animatedDoc, hasAnimation } from '../core/animation';
 
 export interface SceneState {
   doc: SdfDoc;
@@ -70,4 +71,23 @@ export function getScene(doc: SdfDoc, viewRoot: string | null, selected: string 
   scenes.set(key, state);
   if (scenes.size > 16) scenes.delete(scenes.keys().next().value!);
   return state;
+}
+
+/**
+ * Parameters and bounds of the scene at animation time t, without touching
+ * the document (animated Controls never recompile: they are plain numbers).
+ */
+export function animatedParams(
+  doc: SdfDoc,
+  viewRoot: string | null,
+  selected: string | null,
+  t: number,
+): { P: Float32Array; analysis: Analysis } {
+  const base = getScene(doc, viewRoot, selected);
+  if (!hasAnimation(doc)) return { P: base.P, analysis: base.analysis };
+  const d = animatedDoc(doc, t);
+  const analysis = analyze(d, base.compiled.rootId);
+  const P = new Float32Array(base.compiled.paramCount);
+  packParams(d, base.compiled, P, selected, analysis);
+  return { P, analysis };
 }

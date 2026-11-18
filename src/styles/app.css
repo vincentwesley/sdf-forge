@@ -1507,3 +1507,19 @@ dialog.modal::backdrop {
   align-items: center;
   margin-top: 6px;
 }
+
+/* Control animation */
+.anim-toggle {
+  margin: 0 0 6px;
+}
+.anim-toggle.active,
+.btn.icon.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.anim-editor {
+  margin: 0 0 8px 10px;
+  padding-left: 10px;
+  border-left: 2px solid var(--accent-soft);
+}

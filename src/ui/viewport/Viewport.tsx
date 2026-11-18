@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Crosshair, Grid2x2, Layers, Minus, Plus, Scan } from 'lucide-react';
+import { Crosshair, Grid2x2, Layers, Minus, Pause, Play, Plus, Scan } from 'lucide-react';
 import { Renderer, type ViewMode } from '../../render/renderer';
 import { type OrbitCamera, cameraRay, frameBounds } from '../../render/camera';
-import { actions, addShape, select, store, toast, useEditor } from '../../state/store';
-import { getScene } from '../../state/scene';
+import { actions, addShape, select, setPlaying, store, toast, useEditor } from '../../state/store';
+import { animatedParams, getScene } from '../../state/scene';
+import { hasAnimation } from '../../core/animation';
 import { SCENE_THEMES, useResolvedTheme } from '../theme';
 import { raycast } from './pick';
 import { Gizmo } from './Gizmo';
@@ -45,6 +46,10 @@ export function Viewport() {
   const theme = useResolvedTheme();
   const viewMode = useEditor((s) => s.viewMode);
   const grid = useEditor((s) => s.grid);
+  const playing = useEditor((s) => s.playing);
+  const animated = useEditor((s) => hasAnimation(s.doc));
+  /** time origin of the running animation */
+  const animStart = useRef(0);
   const addMode = useEditor((s) => s.addMode);
   const emptyScene = useEditor((s) => getScene(s.doc, s.viewRoot, s.selection[0] ?? null).compiled.empty);
   const hasNodes = useEditor((s) => s.doc.nodes.length > 1);
@@ -119,11 +124,23 @@ export function Viewport() {
         scene.compiled.textures,
       );
     setCompiling(r.compiling);
-    r.setParams(scene.P);
+    // while playing, animated Controls override their values (the document is not changed)
+    const inlined = scene.compiled.paramCount / 4 > budget;
+    const anim =
+      s.playing && !inlined
+        ? animatedParams(
+            s.doc,
+            s.viewRoot,
+            s.selection[0] ?? null,
+            (performance.now() - animStart.current) / 1000,
+          )
+        : null;
+    r.setParams(anim ? anim.P : scene.P);
+    const analysis = anim ? anim.analysis : scene.analysis;
     r.setFrame({
       camera: s.camera,
-      bounds: scene.analysis.bounds,
-      lipschitz: scene.analysis.lipschitz,
+      bounds: analysis.bounds,
+      lipschitz: analysis.lipschitz,
       mode: s.viewMode,
       material: s.doc.settings.material,
       selectionOn: s.selection.length > 0 && !!scene.compiled.nodeIndex[s.selection[0]],
@@ -143,11 +160,23 @@ export function Viewport() {
         s.selection !== p.selection ||
         s.camera !== p.camera ||
         s.viewMode !== p.viewMode ||
-        s.grid !== p.grid
+        s.grid !== p.grid ||
+        s.playing !== p.playing
       )
         sync();
     });
   }, [sync]);
+
+  // --- animated Controls: re-sync every frame while playing --------------------
+  useEffect(() => {
+    if (!playing) return;
+    animStart.current = performance.now();
+    let raf = requestAnimationFrame(function loop() {
+      sync();
+      raf = requestAnimationFrame(loop);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [playing, sync]);
 
   // --- framing ---------------------------------------------------------------
   const frame = useCallback(() => {
@@ -435,6 +464,19 @@ export function Viewport() {
               onSelect: () => actions.set({ viewMode: m.id }),
             }))}
           />
+          {animated && (
+            <button
+              type="button"
+              className={`btn icon ${playing ? 'active' : ''}`}
+              aria-pressed={playing}
+              title={playing ? 'Pause the animation' : 'Play the animated Controls'}
+              aria-label="Play animation"
+              onClick={() => setPlaying(!playing)}
+              data-testid="play-animation"
+            >
+              {playing ? <Pause size={15} /> : <Play size={15} />}
+            </button>
+          )}
           <button
             type="button"
             className="btn icon"

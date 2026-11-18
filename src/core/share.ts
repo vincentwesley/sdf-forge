@@ -13,7 +13,8 @@ type Packed = {
   t: string;
   n: [string, string, number, number, Record<string, ParamValue>, string?][];
   e: [string, string, string][];
-  p?: [string, string, string?][];
+  /** pinned: node, param, label ('' = default), animation [from, to, seconds] */
+  p?: [string, string, string?, [number, number, number]?][];
   s?: { u?: number; m?: string };
 };
 
@@ -39,9 +40,12 @@ export function pack(doc: SdfDoc): Packed {
     e: doc.edges.map((e) => [idMap.get(e.source)!, idMap.get(e.target)!, e.input]),
   };
   if (doc.pinned.length)
-    out.p = doc.pinned.map((p) =>
-      p.label ? [idMap.get(p.node)!, p.param, p.label] : [idMap.get(p.node)!, p.param],
-    );
+    out.p = doc.pinned.map((p) => {
+      const row: NonNullable<Packed['p']>[number] = [idMap.get(p.node)!, p.param];
+      if (p.label || p.anim) row.push(p.label ?? '');
+      if (p.anim) row.push([round(p.anim.from), round(p.anim.to), round(p.anim.seconds)]);
+      return row;
+    });
   if (doc.settings.mmPerUnit !== 10 || doc.settings.material !== 'clay')
     out.s = { u: doc.settings.mmPerUnit, m: doc.settings.material };
   return out;
@@ -54,7 +58,12 @@ export function unpack(p: Packed): SdfDoc {
     title: p.t,
     nodes: p.n.map(([id, type, x, y, params, name]) => ({ id, type, x, y, params, name })),
     edges: (p.e ?? []).map(([source, target, input], i) => ({ id: `e${i}`, source, target, input })),
-    pinned: (p.p ?? []).map(([node, param, label]) => ({ node, param, label })),
+    pinned: (p.p ?? []).map(([node, param, label, anim]) => ({
+      node,
+      param,
+      label: label || undefined,
+      anim: Array.isArray(anim) ? { from: anim[0], to: anim[1], seconds: anim[2] } : undefined,
+    })),
     settings: { mmPerUnit: p.s?.u ?? 10, material: (p.s?.m as SdfDoc['settings']['material']) ?? 'clay' },
   });
 }

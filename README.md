@@ -40,6 +40,8 @@ Made by **Vin** · **Vin's Atelier**.
   it to engrave.
 - **Customise templates.** Pin any setting to the *Controls* panel. Printable templates (vase, planter, keychain,
   ring, bowl, gyroid sphere) come with their key sizes pinned, so you can make one your own without touching the graph.
+- **Animate.** Any pinned number can swing between two values: press Play in the 3D view, or record it in a
+  turntable video (with or without the camera turning). Try the *Sphere to cube* example.
 - **Share.** A link holds the whole graph — no account, no server, nothing uploaded.
 
 ## How it works

@@ -154,6 +154,11 @@ export class Renderer {
     canvas.addEventListener('webglcontextrestored', this.handleRestored);
   }
 
+  /** A copy of the uniform values currently drawn (tests). */
+  get currentParams(): number[] {
+    return [...this.params];
+  }
+
   /** True once the studio reflection map is on the GPU. */
   get hasEnvironment(): boolean {
     return !!this.envTex && this.gl.isTexture(this.envTex);
@@ -340,6 +345,13 @@ export class Renderer {
     if (prev && JSON.stringify(prev) === JSON.stringify(f)) return;
     if (prev && prev.camera !== f.camera) this.interact();
     else this.reset();
+  }
+
+  /** Change part of the frame state (e.g. animated bounds) without rebuilding it. */
+  updateFrame(partial: Partial<FrameState>) {
+    if (!this.frame) return;
+    this.frame = { ...this.frame, ...partial };
+    this.reset();
   }
 
   /** Mark the view as being interacted with (lower resolution, no accumulation). */

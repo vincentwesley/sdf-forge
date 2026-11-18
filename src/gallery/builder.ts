@@ -2,6 +2,7 @@ import { type SdfDoc, emptyDoc, makeNode } from '../core/graph/doc';
 import { applyLayout } from '../core/graph/layout';
 import { getDef } from '../core/nodes/registry';
 import type { MaterialStyle } from '../core/graph/doc';
+import type { PinAnim } from '../core/animation';
 import type { ParamValue } from '../core/nodes/types';
 
 type Inputs = string[] | Record<string, string | string[]>;
@@ -37,8 +38,8 @@ export class DocBuilder {
     this.doc.edges.push({ id: `e${this.doc.edges.length}`, source: src, target: 'out', input: 'shape' });
     return this;
   }
-  pin(node: string, param: string, label?: string) {
-    this.doc.pinned.push({ node, param, ...(label ? { label } : {}) });
+  pin(node: string, param: string, label?: string, anim?: PinAnim) {
+    this.doc.pinned.push({ node, param, ...(label ? { label } : {}), ...(anim ? { anim } : {}) });
     return this;
   }
   done(): SdfDoc {
