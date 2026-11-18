@@ -9,6 +9,7 @@ All notable changes to SDF Forge are documented here. The format follows
 - Text node (2D profile) built from real glyph outlines; *Add → Text* from the toolbar; the keychain template now carries a name.
 - Shell *Opening* option and Cut *measured from* top/bottom, so printable templates stay correct when resized.
 - Copy/paste of nodes, a *Blend with the other shapes* control on every shape, print-check hint in the export dialog.
+- `docs/RESOURCES.md`: vetted list of free 3D resources (CC0 first) and licence rules for outside assets.
 
 ### Changed
 - CI and deploy workflows use the current major versions of the official GitHub actions (Node 24 runtime).
