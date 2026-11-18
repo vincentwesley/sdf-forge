@@ -75,3 +75,9 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     "filaments" in a slicer. Each triangle takes the nearest colour set on a shape, so a three-colour model shows
     three filament slots. Without that list, similar colours are clustered and colours covering under 1 % are folded
     in. The zip writer is our own (about 100 lines, platform `CompressionStream`), so there's no new dependency.
+18. **Reflections come from a real studio HDRI, pre-filtered offline** (vs. a procedural gradient, or prefiltering on
+    the GPU at load). The CC0 Poly Haven map is reduced to a 128×64 equirectangular RGB9E5 mip chain. Each level is
+    convolved for roughness k/5 with a cosine-power lobe matched to GGX, so it's one `textureLod` per pixel and 44 KB
+    on the wire. RGB9E5 is filterable in core WebGL2, so no extensions are needed. The map turns with the key light,
+    so the brightest softbox and the shadow-casting light agree. A little of the background gradient is added so flat
+    faces that see the studio's dark walls still read.

@@ -96,11 +96,13 @@ and dialogs, a keyboard alternative to dragging wires), follows your light/dark 
   [hg_sdf](https://mercury.sexy/hg_sdf/) (MIT).
 - [Manifold](https://github.com/elalish/manifold) (Apache-2.0) for meshing ·
   [Khronos PBR Neutral](https://github.com/KhronosGroup/ToneMapping) (Apache-2.0) tone mapping.
+- Studio reflections: [Studio Small 09](https://polyhaven.com/a/studio_small_09) by Sergej Majboroda,
+  [Poly Haven](https://polyhaven.com) (CC0), pre-filtered by `scripts/make_env.py`.
 - [React](https://react.dev) (MIT), [React Flow / xyflow](https://reactflow.dev) (MIT), [Zustand](https://github.com/pmndrs/zustand) (MIT),
   [Lucide](https://lucide.dev) icons (ISC), [Inter](https://rsms.me/inter/) typeface (SIL OFL 1.1),
   [Mediabunny](https://mediabunny.dev) (MPL-2.0) for video, [opentype.js](https://opentype.js.org) (MIT) for
   reading glyph outlines.
-- Testing: [Playwright](https://playwright.dev), [axe-core](https://github.com/dequelabs/axe-core), [trimesh](https://trimesh.org),
+- Testing: [Playwright](https://playwright.dev), [axe-core](https://github.com/dequelabs/axe-core), [trimesh](https://trimesh.org), [lib3mf](https://github.com/3MFConsortium/lib3mf),
   [glTF-Validator](https://github.com/KhronosGroup/glTF-Validator), [Vitest](https://vitest.dev).
 
 ## Licence

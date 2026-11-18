@@ -73,6 +73,8 @@ export function Viewport() {
       else setError(m);
     };
     r.onCompiled = () => setCompiling(false);
+    // studio reflections (CC0 HDRI from Poly Haven, pre-filtered by scripts/make_env.py)
+    void r.loadEnvironment(`${import.meta.env.BASE_URL}env/studio.bin`);
     setActiveRenderer(r);
     const ro = new ResizeObserver(() => r.requestRender());
     ro.observe(canvas);

@@ -26,6 +26,7 @@ URL in the commit message or in `public/CREDITS.md`, and prefer **CC0** whenever
 | manifold-3d | Apache-2.0 | Mesh export |
 | opentype.js | MIT | Text node |
 | mediabunny | MPL-2.0 (file-level copyleft only; we use it unmodified from npm) | Video export |
+| “Studio Small 09” HDRI by Sergej Majboroda, Poly Haven | **CC0** (credited anyway) | `public/env/studio.bin`, reflections on Glossy and Metal |
 
 ## Yellow: allowed with conditions (read before using)
 

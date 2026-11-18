@@ -64,6 +64,10 @@ export function AboutDialog() {
         <li>Meshing: Manifold by Emmett Lalish and contributors (Apache-2.0).</li>
         <li>Tone mapping: Khronos PBR Neutral (Apache-2.0).</li>
         <li>
+          Studio reflections: “Studio Small 09” by Sergej Majboroda, Poly Haven (CC0), pre-filtered for each
+          roughness.
+        </li>
+        <li>
           Node editor: React Flow / xyflow (MIT). UI: React (MIT), Zustand (MIT), Lucide icons (ISC), Inter
           typeface (SIL OFL 1.1).
         </li>

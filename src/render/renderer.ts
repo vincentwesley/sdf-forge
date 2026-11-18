@@ -68,6 +68,11 @@ export interface RendererStats {
  * WebGL2 SDF ray marcher with on-demand rendering, dynamic resolution while
  * interacting and progressive anti-aliasing when idle.
  */
+/** Studio reflection map: level-0 size and texture unit (units 1-4 hold text grids). */
+const ENV_W = 128,
+  ENV_H = 64,
+  ENV_UNIT = 5;
+
 export class Renderer {
   readonly gl: WebGL2RenderingContext;
   private canvas: HTMLCanvasElement;
@@ -98,6 +103,7 @@ export class Renderer {
   private disposed = false;
   private emptyScene = true;
   private textures: { grid: TextGrid; tex: WebGLTexture }[] = [];
+  private envTex: WebGLTexture | null = null;
   /** device pixel ratio cap */
   maxDpr = 2;
   onError: ((msg: string | null) => void) | null = null;
@@ -146,6 +152,64 @@ export class Renderer {
 
     canvas.addEventListener('webglcontextlost', this.handleLost);
     canvas.addEventListener('webglcontextrestored', this.handleRestored);
+  }
+
+  /** True once the studio reflection map is on the GPU. */
+  get hasEnvironment(): boolean {
+    return !!this.envTex;
+  }
+
+  /**
+   * Load the pre-filtered studio reflection map (see scripts/make_env.py):
+   * RGB9E5 texels, 128x64 down to 4x2. Until it arrives (or if it fails),
+   * reflections fall back to the background gradient.
+   */
+  async loadEnvironment(url: string): Promise<boolean> {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return false;
+      const data = new Uint32Array(await res.arrayBuffer());
+      if (this.disposed || this.lost) return false;
+      const gl = this.gl;
+      const tex = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+      let w = ENV_W,
+        h = ENV_H,
+        off = 0,
+        level = 0;
+      while (h >= 2) {
+        if (off + w * h > data.length) return false;
+        gl.texImage2D(
+          gl.TEXTURE_2D,
+          level,
+          gl.RGB9_E5,
+          w,
+          h,
+          0,
+          gl.RGB,
+          gl.UNSIGNED_INT_5_9_9_9_REV,
+          data,
+          off,
+        );
+        off += w * h;
+        level++;
+        w >>= 1;
+        h >>= 1;
+      }
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_BASE_LEVEL, 0);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, level - 1);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      if (this.envTex) gl.deleteTexture(this.envTex);
+      this.envTex = tex;
+      this.reset();
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private handleLost = (e: Event) => {
@@ -400,6 +464,7 @@ export class Renderer {
     if (this.accumTex && this.accumW === w && this.accumH === h) return;
     const gl = this.gl;
     if (this.accumTex) gl.deleteTexture(this.accumTex);
+    if (this.envTex) gl.deleteTexture(this.envTex);
     if (this.accumFbo) gl.deleteFramebuffer(this.accumFbo);
     this.accumTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, this.accumTex);
@@ -467,6 +532,11 @@ export class Renderer {
     gl.uniform1f(this.u(p, 'uShadowQuality'), idle ? 1 : 0);
     gl.uniform1f(this.u(p, 'uTransparentBg'), f.transparent ? 1 : 0);
     gl.uniform1f(this.u(p, 'uFrame'), this.accumCount % 64);
+    gl.activeTexture(gl.TEXTURE0 + ENV_UNIT);
+    gl.bindTexture(gl.TEXTURE_2D, this.envTex);
+    gl.uniform1i(this.u(p, 'uEnv'), ENV_UNIT);
+    gl.uniform1f(this.u(p, 'uEnvOn'), this.envTex ? 1 : 0);
+    gl.uniform1f(this.u(p, 'uEnvYaw'), yaw);
     this.textures.forEach((t, i) => {
       gl.activeTexture(gl.TEXTURE1 + i);
       gl.bindTexture(gl.TEXTURE_2D, t.tex);
@@ -552,6 +622,7 @@ export class Renderer {
     if (this.pending) this.deleteProgram(this.pending);
     gl.deleteProgram(this.copyProg);
     if (this.accumTex) gl.deleteTexture(this.accumTex);
+    if (this.envTex) gl.deleteTexture(this.envTex);
     if (this.accumFbo) gl.deleteFramebuffer(this.accumFbo);
   }
 }
