@@ -57,8 +57,19 @@ export function Menu({
       if (!menu.current?.contains(e.target as Node) && !btn.current?.contains(e.target as Node))
         setOpen(false);
     };
+    // Escape closes the menu even if focus has not moved into it yet
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      setOpen(false);
+      btn.current?.focus();
+    };
     document.addEventListener('pointerdown', onDoc, true);
-    return () => document.removeEventListener('pointerdown', onDoc, true);
+    document.addEventListener('keydown', onEsc, true);
+    return () => {
+      document.removeEventListener('pointerdown', onDoc, true);
+      document.removeEventListener('keydown', onEsc, true);
+    };
   }, [open]);
 
   useEffect(() => {

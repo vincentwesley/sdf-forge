@@ -20,14 +20,20 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: /perf\.spec/,
+      testIgnore: /(perf|heavy)\.spec/,
       use: { ...devices['Desktop Chrome'], launchOptions: { args } },
     },
-    // frame-rate checks run last and alone so other tests don't steal the CPU
+    // frame-rate checks and the slow video export run last, one project at a time, so nothing steals the CPU
     {
       name: 'perf',
       testMatch: /perf\.spec/,
       dependencies: ['chromium'],
+      use: { ...devices['Desktop Chrome'], launchOptions: { args } },
+    },
+    {
+      name: 'heavy',
+      testMatch: /heavy\.spec/,
+      dependencies: ['perf'],
       use: { ...devices['Desktop Chrome'], launchOptions: { args } },
     },
   ],

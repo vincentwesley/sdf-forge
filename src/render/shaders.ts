@@ -44,6 +44,7 @@ uniform vec3 uKeyDir;
 uniform float uThinLimit;
 uniform float uShadowQuality; // 0 = fast, 1 = full
 uniform float uTransparentBg;
+uniform float uFrame;
 
 out vec4 outColor;
 
@@ -91,7 +92,10 @@ float softShadow(vec3 ro, vec3 rd, float tmin, float tmax, float w) {
   tmin = max(tmin, bt.x);
   tmax = min(tmax, bt.y);
   float res = 1.0;
-  float t = tmin;
+  // per-pixel, per-frame jitter of the start turns banding into noise that
+  // the progressive accumulation averages away
+  float jit = fract(sin(dot(gl_FragCoord.xy + uFrame * 7.31, vec2(12.9898, 78.233))) * 43758.5453);
+  float t = tmin + jit * 0.02;
   float ph = 1e10;
   int n = uShadowQuality > 0.5 ? 64 : 24;
   for (int i = 0; i < 64; i++) {

@@ -447,6 +447,7 @@ export class Renderer {
     gl.uniform1f(this.u(p, 'uThinLimit'), f.thinLimit);
     gl.uniform1f(this.u(p, 'uShadowQuality'), idle ? 1 : 0);
     gl.uniform1f(this.u(p, 'uTransparentBg'), f.transparent ? 1 : 0);
+    gl.uniform1f(this.u(p, 'uFrame'), this.accumCount % 64);
   }
 
   /**

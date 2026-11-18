@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Film, Loader2 } from 'lucide-react';
 import { getActiveRenderer } from '../../render/registry';
 import { toast, useEditor, store } from '../../state/store';
 import { downloadBlob, safeFilename } from '../../workers/meshClient';
 
 const SIZES = [
+  { id: 'sm', label: '480 × 480', w: 480, h: 480 },
   { id: 'sq', label: '720 × 720', w: 720, h: 720 },
   { id: 'hd', label: '1280 × 720', w: 1280, h: 720 },
   { id: 'fhd', label: '1920 × 1080', w: 1920, h: 1080 },
@@ -17,12 +18,13 @@ export function VideoTab() {
   const [progress, setProgress] = useState<number | null>(null);
   const title = useEditor((s) => s.doc.title);
   const supported = typeof VideoEncoder !== 'undefined';
-  const cancelRef = { current: false };
+  const cancelRef = useRef(false);
 
   const run = async () => {
     const r = getActiveRenderer();
     if (!r) return;
     setProgress(0);
+    cancelRef.current = false;
     try {
       const mb = await import('mediabunny');
       const s = SIZES.find((x) => x.id === size)!;
@@ -55,6 +57,10 @@ export function VideoTab() {
         if (i % 3 === 0) setProgress(i / total);
       }
       r.endOffline();
+      if (cancelRef.current) {
+        await output.cancel();
+        return;
+      }
       await output.finalize();
       const buf = (output.target as InstanceType<typeof mb.BufferTarget>).buffer!;
       downloadBlob(

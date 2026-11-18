@@ -6,10 +6,17 @@ import { Inspector } from './inspector/Inspector';
 import { Toasts } from './Toasts';
 import { Tour } from './Tour';
 import { CommandPalette } from './CommandPalette';
-import { ExportDialog } from './dialogs/ExportDialog';
-import { GalleryDialog } from './dialogs/GalleryDialog';
-import { ShareDialog } from './dialogs/ShareDialog';
-import { AboutDialog, ShortcutsDialog } from './dialogs/InfoDialogs';
+import { lazy, Suspense } from 'react';
+
+const ExportDialog = lazy(() => import('./dialogs/ExportDialog').then((m) => ({ default: m.ExportDialog })));
+const GalleryDialog = lazy(() =>
+  import('./dialogs/GalleryDialog').then((m) => ({ default: m.GalleryDialog })),
+);
+const ShareDialog = lazy(() => import('./dialogs/ShareDialog').then((m) => ({ default: m.ShareDialog })));
+const AboutDialog = lazy(() => import('./dialogs/InfoDialogs').then((m) => ({ default: m.AboutDialog })));
+const ShortcutsDialog = lazy(() =>
+  import('./dialogs/InfoDialogs').then((m) => ({ default: m.ShortcutsDialog })),
+);
 import {
   actions,
   copyNodes,
@@ -193,12 +200,14 @@ export function App() {
         </aside>
       </main>
       <footer className="sr-only">SDF Forge by Vin’s Atelier</footer>
-      {dialog === 'export' && <ExportDialog />}
-      {dialog === 'code' && <ExportDialog initialTab="code" />}
-      {dialog === 'gallery' && <GalleryDialog />}
-      {dialog === 'share' && <ShareDialog />}
-      {dialog === 'shortcuts' && <ShortcutsDialog />}
-      {dialog === 'about' && <AboutDialog />}
+      <Suspense fallback={null}>
+        {dialog === 'export' && <ExportDialog />}
+        {dialog === 'code' && <ExportDialog initialTab="code" />}
+        {dialog === 'gallery' && <GalleryDialog />}
+        {dialog === 'share' && <ShareDialog />}
+        {dialog === 'shortcuts' && <ShortcutsDialog />}
+        {dialog === 'about' && <AboutDialog />}
+      </Suspense>
       <CommandPalette />
       <Tour />
       <Toasts />

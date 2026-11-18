@@ -44,7 +44,7 @@ graph ─► typed expression IR ─┬─► GLSL  ─► WebGL2 ray marcher (u
 
 - **One definition, two back ends.** Each node's formula is written once in a tiny typed IR (`src/core/ir`); the
   compiler hash-conses it and emits both GLSL and allocation-free scalar JavaScript. Tests check that the GPU and CPU
-  agree to ~10⁻⁶ on every node and example.
+  agree on every node and example (typically to 10⁻⁷, always within 10⁻³).
 - **Correct by construction where it matters.** Every node declares conservative bounds and a Lipschitz estimate,
   so the ray marcher never overshoots (twists and noise slow down instead of tearing) and the mesher always
   encloses the shape.

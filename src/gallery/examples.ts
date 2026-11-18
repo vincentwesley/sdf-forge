@@ -79,42 +79,31 @@ export const EXAMPLES: Example[] = [
     id: 'planter',
     title: 'Planter with drainage',
     description:
-      'A rounded pot with a drainage hole and a rim. Set the size and wall thickness in Controls, then export an STL.',
+      'A tapered pot with a drainage hole. Set its size and wall thickness in Controls, then export an STL.',
     tags: ['printable'],
     build: () => {
       const b = new DocBuilder('Planter', { mmPerUnit: 25 });
-      const body = b.add(
-        'cylinder',
-        { radius: 1.6, height: 2.8, rounding: 0.35, position: [0, 1.4, 0], color: C.terracotta },
+      // a tapered pot: every Control stays valid whatever values you choose
+      const pot = b.add(
+        'cone',
+        { height: 2.8, bottom: 1.3, top: 1.7, position: [0, 1.4, 0], color: C.terracotta },
         undefined,
         'Pot',
       );
-      const taper = b.add(
-        'cone',
-        { height: 2.8, bottom: 1.35, top: 1.75, position: [0, 1.4, 0], color: C.terracotta },
-        undefined,
-        'Taper',
-      );
-      const pot = b.add('intersect', { smooth: 0.2 }, { a: body, b: taper });
-      const sh = b.add('shell', { thickness: 0.1, side: 'inside' }, [pot]);
-      const open = b.add('cut', { axis: 'y', offset: 2.72, keep: 'below' }, [sh], 'Open top');
-      const rim = b.add(
-        'torus',
-        { major: 1.68, minor: 0.08, position: [0, 2.72, 0], color: C.terracotta },
-        undefined,
-        'Rim',
-      );
-      const withRim = b.add('union', { smooth: 0.06 }, [open, rim]);
+      const soft = b.add('round', { amount: 0.06 }, [pot], 'Soften edges');
+      const sh = b.add('shell', { thickness: 0.1, side: 'inside', open: 'top' }, [soft]);
+      // a tall thin cylinder only meets the floor, because the pot is hollow
       const hole = b.add(
         'cylinder',
-        { radius: 0.22, height: 0.6, rounding: 0, position: [0, 0, 0], color: C.terracotta },
+        { radius: 0.22, height: 8, rounding: 0, position: [0, 1.4, 0], color: C.terracotta },
         undefined,
         'Drain hole',
       );
-      const res = b.add('subtract', { smooth: 0.03 }, { base: withRim, cutter: hole });
+      const res = b.add('subtract', { smooth: 0.03 }, { base: sh, cutter: hole });
       b.output(res);
-      b.pin(body, 'radius', 'Radius')
-        .pin(body, 'height', 'Height')
+      b.pin(pot, 'top', 'Top radius')
+        .pin(pot, 'bottom', 'Bottom radius')
+        .pin(pot, 'height', 'Height')
         .pin(sh, 'thickness', 'Wall')
         .pin(hole, 'radius', 'Drain hole');
       return b.done();
@@ -139,19 +128,15 @@ export const EXAMPLES: Example[] = [
     id: 'keychain',
     title: 'Keychain tag',
     description:
-      'A rounded tag with a key-ring hole and a raised star. Thickness and hole size are in Controls.',
+      'A rounded tag with a key-ring hole and a raised star. Size, thickness and the hole are in Controls.',
     tags: ['printable'],
     build: () => {
       const b = new DocBuilder('Keychain tag', { mmPerUnit: 10 });
-      const r = b.add('rect', { size: [5, 2.6], rounding: 0.6, color: C.blue });
-      const tag = b.add('extrude', { height: 0.35, rounding: 0.08, position: [0, 0.175, 0] }, [r], 'Tag');
-      const hole = b.add(
-        'cylinder',
-        { radius: 0.3, height: 1, rounding: 0, position: [-1.9, 0, 0], color: C.blue },
-        undefined,
-        'Ring hole',
-      );
-      const cut = b.add('subtract', { smooth: 0.04 }, { base: tag, cutter: hole });
+      // the hole is cut in 2D before extruding, so it is easy to move with the Hole position control
+      const r = b.add('rect', { size: [5, 2.6], rounding: 0.6, color: C.blue }, undefined, 'Tag outline');
+      const hole = b.add('circle', { radius: 0.3, offset: [-1.9, 0], color: C.blue }, undefined, 'Ring hole');
+      const holed = b.add('subtract', { smooth: 0.05 }, { base: r, cutter: hole });
+      const tag = b.add('extrude', { height: 0.35, rounding: 0.08, position: [0, 0.175, 0] }, [holed], 'Tag');
       const star = b.add('star', {
         points: 5,
         radius: 0.85,
@@ -166,9 +151,12 @@ export const EXAMPLES: Example[] = [
         [star],
         'Raised star',
       );
-      const u = b.add('union', { smooth: 0.03 }, [cut, raised]);
+      const u = b.add('union', { smooth: 0.03 }, [tag, raised]);
       b.output(u);
-      b.pin(r, 'size', 'Size').pin(tag, 'height', 'Thickness').pin(hole, 'radius', 'Hole radius');
+      b.pin(r, 'size', 'Size')
+        .pin(tag, 'height', 'Thickness')
+        .pin(hole, 'radius', 'Hole radius')
+        .pin(hole, 'offset', 'Hole position');
       return b.done();
     },
   },
@@ -176,7 +164,7 @@ export const EXAMPLES: Example[] = [
     id: 'ring',
     title: 'Comfort-fit ring',
     description:
-      'A ring made by revolving a rounded rectangle. Set the inner radius to your finger size (radius 9 mm ≈ US 9).',
+      'A ring made by revolving a rounded rectangle. Band radius is measured to the middle of the band: add half the thickness to your finger radius.',
     tags: ['printable'],
     build: () => {
       const b = new DocBuilder('Ring', { mmPerUnit: 5, material: 'metal' });
@@ -187,10 +175,8 @@ export const EXAMPLES: Example[] = [
         'Band profile',
       );
       const ring = b.add('revolve', { offset: 2, rotation: [90, 0, 0] }, [prof]);
-      const gem = b.add('octahedron', { size: 0.5, position: [0, 2.55, 0], color: C.teal }, undefined, 'Gem');
-      const u = b.add('union', { smooth: 0.12 }, [ring, gem]);
-      b.output(u);
-      b.pin(ring, 'offset', 'Band radius').pin(prof, 'size', 'Band size').pin(gem, 'size', 'Gem size');
+      b.output(ring);
+      b.pin(ring, 'offset', 'Band radius').pin(prof, 'size', 'Thickness × width');
       return b.done();
     },
   },

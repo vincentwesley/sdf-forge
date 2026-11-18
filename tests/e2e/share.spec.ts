@@ -8,8 +8,8 @@ test('share link round-trips the whole graph', async ({ page, browser }) => {
   await page.getByRole('textbox', { name: 'Shape name' }).first().press('Enter');
   const original = await page.evaluate(() => window.sdfForge.getDoc());
   await page.getByTestId('open-share').click();
+  await expect(page.getByTestId('share-url')).toHaveValue(/#g=[\w-]+$/);
   const url = await page.getByTestId('share-url').inputValue();
-  expect(url).toMatch(/#g=[\w-]+$/);
   expect(url).toContain('/sdf-forge/');
   // open the link in a fresh browser context (no shared storage)
   const ctx = await browser.newContext();

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Crosshair, Grid2x2, Layers, Minus, Plus, Scan } from 'lucide-react';
 import { Renderer, type ViewMode } from '../../render/renderer';
 import { type OrbitCamera, cameraRay, frameBounds } from '../../render/camera';
-import { actions, addShape, select, store, useEditor } from '../../state/store';
+import { actions, addShape, select, store, toast, useEditor } from '../../state/store';
 import { getScene } from '../../state/scene';
 import { SCENE_THEMES, useResolvedTheme } from '../theme';
 import { raycast } from './pick';
@@ -12,6 +12,18 @@ import { getDef } from '../../core/nodes/registry';
 import { Menu } from '../Menu';
 import { WelcomeNudge } from '../Tour';
 import { setActiveRenderer } from '../../render/registry';
+
+let warnedInline = false;
+
+/** Replace uniform reads with literal values. */
+export function inlineParams(glsl: string, P: Float32Array): string {
+  return glsl.replace(/uP\[(\d+)\]\.([xyzw])/g, (_m, i, c) => {
+    const v = P[Number(i) * 4 + 'xyzw'.indexOf(c)] ?? 0;
+    const t = String(v);
+    const lit = /[.e]/.test(t) ? t : `${t}.0`;
+    return v < 0 ? `(${lit})` : lit;
+  });
+}
 
 const QUICK_SHAPES = ['sphere', 'box', 'cylinder', 'torus', 'capsule', 'cone'];
 const MORE_SHAPES = ['ellipsoid', 'octahedron', 'hexPrism', 'link'];
@@ -78,7 +90,21 @@ export function Viewport() {
     if (!r) return;
     const s = store.getState();
     const scene = getScene(s.doc, s.viewRoot, s.selection[0] ?? null);
-    r.setScene(scene.compiled.glsl, scene.compiled.paramCount, scene.compiled.empty);
+    // Very large graphs can exceed the GPU's uniform budget (as low as 224 vec4 on
+    // some mobile GPUs). Then bake the values into the shader instead: slower to
+    // edit (each change recompiles) but it still draws.
+    const budget = r.maxUniformVec4s - 40;
+    if (scene.compiled.paramCount / 4 > budget) {
+      r.setScene(inlineParams(scene.compiled.glsl, scene.P), 4, scene.compiled.empty);
+      if (!warnedInline) {
+        warnedInline = true;
+        toast(
+          'This graph is very large for your GPU, so changes recompile the shader and may feel slower.',
+          'info',
+          6000,
+        );
+      }
+    } else r.setScene(scene.compiled.glsl, scene.compiled.paramCount, scene.compiled.empty);
     setCompiling(r.compiling);
     r.setParams(scene.P);
     r.setFrame({
