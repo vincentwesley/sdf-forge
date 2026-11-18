@@ -105,6 +105,12 @@ export interface EmitCtx {
   empty(): ShapeVal;
 }
 
+/** Extra information available when deriving uniforms on the CPU. */
+export interface DeriveCtx {
+  /** bounds of the shape connected to an input (null while compiling or if empty) */
+  inputBounds(key: string): AABB | null;
+}
+
 export interface AABB {
   min: [number, number, number];
   max: [number, number, number];
@@ -148,7 +154,7 @@ export interface NodeDef {
   /** Is the distance exact (true SDF) or a lower bound? Used by tests and docs. */
   exactness: 'exact' | 'bound' | 'approx';
   /** Derived uniforms computed from params on the CPU. */
-  derive?: (params: Record<string, ParamValue>) => Record<string, number | number[]>;
+  derive?: (params: Record<string, ParamValue>, ctx: DeriveCtx) => Record<string, number | number[]>;
   emit(ctx: EmitCtx): ShapeVal;
   /** conservative bounds in the node's local space (before its own transform) */
   bounds(ctx: BoundsCtx): AABB | null;

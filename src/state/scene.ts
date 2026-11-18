@@ -53,7 +53,7 @@ export function getScene(doc: SdfDoc, viewRoot: string | null, selected: string 
   if (hit && hit.doc === doc) return hit;
   const base = baseFor(doc, viewRoot);
   const P = new Float32Array(base.compiled.paramCount);
-  packParams(doc, base.compiled, P, selected);
+  packParams(doc, base.compiled, P, selected, base.analysis);
   const compiled = base.compiled;
   const state: SceneState = {
     doc,

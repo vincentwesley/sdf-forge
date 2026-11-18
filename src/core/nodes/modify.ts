@@ -357,16 +357,37 @@ export const shell: NodeDef = {
       ],
       help: 'Inside keeps the outer size unchanged.',
     },
+    {
+      key: 'open',
+      label: 'Opening',
+      kind: 'enum',
+      default: 'none',
+      structural: true,
+      options: [
+        { value: 'none', label: 'Closed' },
+        { value: 'top', label: 'Open top' },
+        { value: 'bottom', label: 'Open bottom' },
+      ],
+      help: 'Removes the lid (or floor) so you get a cup, vase or pot. Follows the shape when you resize it.',
+    },
   ],
-  derive: (pr) => {
+  derive: (pr, ctx) => {
     const t = pr.thickness as number;
     const side = pr.side as string;
-    return { half: t / 2, off: side === 'inside' ? t / 2 : side === 'outside' ? -t / 2 : 0 };
+    const b = ctx.inputBounds('shape');
+    const outer = side === 'outside' ? t : side === 'center' ? t / 2 : 0;
+    // cut a little deeper than the wall so no film is left behind
+    const top = b ? b.max[1] + outer - t * 1.3 - outer * 2 : 0;
+    const bottom = b ? b.min[1] - outer + t * 1.3 + outer * 2 : 0;
+    return { half: t / 2, off: side === 'inside' ? t / 2 : side === 'outside' ? -t / 2 : 0, top, bottom };
   },
-  emit: ({ ir, input, derived, empty }) => {
+  emit: ({ ir, p, input, derived, value, empty }) => {
     const s = input('shape');
     if (!s) return empty();
-    return { d: ir.sub(ir.abs(ir.add(s.d, derived('off'))), derived('half')), col: s.col };
+    let d = ir.sub(ir.abs(ir.add(s.d, derived('off'))), derived('half'));
+    if (value('open') === 'top' && p.ty === 'v3') d = ir.max(d, ir.sub(ir.y(p), derived('top')));
+    if (value('open') === 'bottom' && p.ty === 'v3') d = ir.max(d, ir.sub(derived('bottom'), ir.y(p)));
+    return { d, col: s.col };
   },
   bounds: ({ input, params }) => {
     const t = params.thickness as number;
@@ -602,8 +623,8 @@ export const cut: NodeDef = {
   label: 'Cut',
   category: 'modify',
   summary: 'Slice a shape flat with a plane.',
-  help: 'Cuts the input with a flat plane and keeps one side. Use it to give a print a flat base, open the top of a hollow shell, or show a cross-section.',
-  keywords: ['slice', 'plane', 'flat', 'section', 'trim', 'base'],
+  help: 'Cuts the input with a flat plane and keeps one side. Use it to give a print a flat base, open the top of a hollow shell, or show a cross-section. Measure the position from the top or bottom of the shape and the cut follows when the shape changes size.',
+  keywords: ['slice', 'plane', 'flat', 'section', 'trim', 'base', 'open top'],
   inputs: [{ key: 'shape', label: 'Shape', type: 'sdf3' }],
   output: 'sdf3',
   exactness: 'bound',
@@ -620,6 +641,18 @@ export const cut: NodeDef = {
         { value: 'z', label: 'Z' },
       ],
     },
+    {
+      key: 'from',
+      label: 'Measured from',
+      kind: 'enum',
+      default: 'origin',
+      options: [
+        { value: 'origin', label: 'Origin' },
+        { value: 'max', label: 'Top' },
+        { value: 'min', label: 'Bottom' },
+      ],
+      help: 'Top and Bottom measure inward from the shape\u2019s extent along the axis, so the cut moves with the shape.',
+    },
     { key: 'offset', label: 'Position', kind: 'float', unit: 'length', default: 0, softMin: -3, softMax: 3 },
     {
       key: 'keep',
@@ -632,12 +665,12 @@ export const cut: NodeDef = {
       ],
     },
   ],
-  derive: (pr) => ({ sgn: pr.keep === 'above' ? -1 : 1 }),
-  emit: ({ ir, p, input, num, value, derived, empty }) => {
+  derive: (pr, ctx) => ({ sgn: pr.keep === 'above' ? -1 : 1, at: cutPosition(pr, ctx.inputBounds('shape')) }),
+  emit: ({ ir, p, input, value, derived, empty }) => {
     const s = input('shape');
     if (!s) return empty();
     const c = ir.comp(p, 'xyz'.indexOf(value('axis') as string));
-    const plane = ir.mul(ir.sub(c, num('offset')), derived('sgn'));
+    const plane = ir.mul(ir.sub(c, derived('at')), derived('sgn'));
     return { d: ir.max(s.d, plane), col: s.col };
   },
   bounds: ({ input, params }) => {
@@ -645,13 +678,21 @@ export const cut: NodeDef = {
     if (!b) return null;
     const i = 'xyz'.indexOf(params.axis as string);
     const out: AABB = { min: [...b.min], max: [...b.max] };
-    const o = params.offset as number;
+    const o = cutPosition(params, b);
     if (params.keep === 'above') out.min[i] = Math.max(out.min[i], o);
     else out.max[i] = Math.min(out.max[i], o);
     if (out.min[i] > out.max[i]) return null;
     return out;
   },
 };
+
+/** Absolute plane position along the cut axis. */
+function cutPosition(pr: Record<string, ParamValue>, b: AABB | null): number {
+  const o = pr.offset as number;
+  const i = 'xyz'.indexOf(pr.axis as string);
+  if (!b || pr.from === 'origin' || !pr.from) return o;
+  return pr.from === 'max' ? b.max[i] - o : b.min[i] + o;
+}
 
 export const MODIFY = [
   transform,

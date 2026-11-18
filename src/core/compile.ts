@@ -4,7 +4,7 @@ import { emitJsBody } from './ir/js';
 import { GLSL_NOISE, noise3 } from './ir/noise';
 import { type GNode, type SdfDoc, findOutput, inputEdges, resolveDims } from './graph/doc';
 import { getDef, paramsOf } from './nodes/registry';
-import type { AABB, Dim, EmitCtx, NodeDef, ParamValue, ShapeVal } from './nodes/types';
+import type { AABB, DeriveCtx, Dim, EmitCtx, NodeDef, ParamValue, ShapeVal } from './nodes/types';
 import { eulerMatrix, mat3mul, rot2, transformBounds, transpose3, unionBounds } from './nodes/lib';
 
 /** Distance used for "nothing here". Large but safely representable in float32. */
@@ -73,10 +73,12 @@ function transformDerived(
   return {};
 }
 
-export function deriveAll(node: GNode): Record<string, number | number[]> {
+const NO_BOUNDS: DeriveCtx = { inputBounds: () => null };
+
+export function deriveAll(node: GNode, ctx: DeriveCtx = NO_BOUNDS): Record<string, number | number[]> {
   const def = getDef(node.type);
   if (!def) return {};
-  return { ...(def.derive?.(node.params) ?? {}), ...transformDerived(def, node.params) };
+  return { ...(def.derive?.(node.params, ctx) ?? {}), ...transformDerived(def, node.params) };
 }
 
 export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
@@ -333,8 +335,25 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
 }
 
 /** Fill the param array from current node values. */
-export function packParams(doc: SdfDoc, c: Compiled, P: Float32Array, selected: string | null = null) {
+export function packParams(
+  doc: SdfDoc,
+  c: Compiled,
+  P: Float32Array,
+  selected: string | null = null,
+  analysis?: Analysis,
+) {
   const byId = new Map(doc.nodes.map((n) => [n.id, n]));
+  let an = analysis;
+  const ctxFor = (nodeId: string): DeriveCtx => ({
+    inputBounds: (key) => {
+      an ??= analyze(doc, c.rootId);
+      for (const e of inputEdges(doc, nodeId, key)) {
+        const b = an.nodeBounds.get(e.source);
+        if (b) return b;
+      }
+      return null;
+    },
+  });
   const derivedCache = new Map<string, Record<string, number | number[]>>();
   P[SEL_SLOT] = selected && c.nodeIndex[selected] ? c.nodeIndex[selected] : -1;
   for (const s of c.slots) {
@@ -344,7 +363,7 @@ export function packParams(doc: SdfDoc, c: Compiled, P: Float32Array, selected: 
     if (s.derived) {
       let d = derivedCache.get(s.node);
       if (!d) {
-        d = deriveAll(node);
+        d = deriveAll(node, ctxFor(s.node));
         derivedCache.set(s.node, d);
       }
       v = d[s.key];

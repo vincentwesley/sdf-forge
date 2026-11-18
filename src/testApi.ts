@@ -54,6 +54,18 @@ export const testApi = {
       set.add((d[i] >> 3) * 1024 + (d[i + 1] >> 3) * 32 + (d[i + 2] >> 3));
     return set.size;
   },
+  /** Render the current view to a WebP data URL (used to make gallery thumbnails). */
+  snapshot: (w: number, h: number, type = 'image/webp') => {
+    const r = getActiveRenderer();
+    if (!r) return '';
+    const c = r.renderOffline(w, h, { frames: 32 });
+    const tmp = document.createElement('canvas');
+    tmp.width = w;
+    tmp.height = h;
+    tmp.getContext('2d')!.drawImage(c, 0, 0);
+    r.endOffline();
+    return tmp.toDataURL(type, 0.86);
+  },
   rendererStats: () => getActiveRenderer()?.stats ?? null,
   compiling: () => getActiveRenderer()?.compiling ?? true,
   setContinuous: (on: boolean) => {

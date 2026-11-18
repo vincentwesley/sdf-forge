@@ -210,8 +210,8 @@ vec3 shade(vec3 p, vec3 rd, float t) {
     // compare against the scene distance at the same point so hit-point error cancels out
     float dScene = map(p);
     float s = 1.0 - smoothstep(0.0, max(0.01, 0.004 * t), abs(mc.w) - abs(dScene));
-    vec3 tint = col * 0.55 + uSelColor * (0.3 + 0.5 * rim);
-    col = mix(col, tint, s * 0.6);
+    // a light glow and rim in the accent colour; keeps the shape's own colour readable
+    col = col * (1.0 - 0.18 * s) + uSelColor * s * (0.12 + 0.9 * rim);
   }
   return col;
 }

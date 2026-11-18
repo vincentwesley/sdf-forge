@@ -65,9 +65,8 @@ export const EXAMPLES: Example[] = [
       const st = b.add('star', { points: 9, radius: 1.1, inner: 0.84, color: C.teal });
       const ex = b.add('extrude', { height: 4, rounding: 0.04, position: [0, 2, 0] }, [st]);
       const tw = b.add('twist', { amount: 25 }, [ex]);
-      const sh = b.add('shell', { thickness: 0.08, side: 'inside' }, [tw]);
-      const cut = b.add('cut', { axis: 'y', offset: 3.92, keep: 'below' }, [sh], 'Open top');
-      b.output(cut);
+      const sh = b.add('shell', { thickness: 0.08, side: 'inside', open: 'top' }, [tw]);
+      b.output(sh);
       b.pin(ex, 'height', 'Height')
         .pin(st, 'radius', 'Radius')
         .pin(st, 'points', 'Ridges')
@@ -131,7 +130,7 @@ export const EXAMPLES: Example[] = [
       const b = new DocBuilder('Gyroid sphere', { mmPerUnit: 20, material: 'glossy' });
       const s = b.add('sphere', { radius: 1.5, color: C.violet });
       const l = b.add('lattice', { pattern: 'gyroid', cell: 0.9, thickness: 0.14, skin: 0 }, [s]);
-      const base = b.add('cut', { axis: 'y', offset: -1.2, keep: 'above' }, [l], 'Flat base');
+      const base = b.add('cut', { axis: 'y', from: 'min', offset: 0.3, keep: 'above' }, [l], 'Flat base');
       b.output(base).pin(l, 'cell', 'Cell size').pin(l, 'thickness', 'Strut').pin(s, 'radius', 'Radius');
       return b.done();
     },
@@ -203,7 +202,7 @@ export const EXAMPLES: Example[] = [
     build: () => {
       const b = new DocBuilder('Ribbed bowl', { mmPerUnit: 40, material: 'glossy' });
       const s = b.add('sphere', { radius: 1.5, color: C.cream });
-      const foot = b.add('cut', { axis: 'y', offset: -1.3, keep: 'above' }, [s], 'Flat foot');
+      const foot = b.add('cut', { axis: 'y', from: 'min', offset: 0.2, keep: 'above' }, [s], 'Flat foot');
       const w = b.add('displace', { pattern: 'waves', amount: 0.03, scale: 0.5 }, [foot], 'Ripples');
       const sh = b.add('shell', { thickness: 0.08, side: 'inside' }, [w]);
       const top = b.add('cut', { axis: 'y', offset: 0.35, keep: 'below' }, [sh], 'Open top');
@@ -266,7 +265,7 @@ export const EXAMPLES: Example[] = [
       const b = new DocBuilder('Rock');
       const e = b.add('ellipsoid', { radii: [1.4, 0.9, 1.1], color: C.stone });
       const d = b.add('displace', { pattern: 'noise', amount: 0.32, scale: 1.1, octaves: 4, seed: 7 }, [e]);
-      const base = b.add('cut', { axis: 'y', offset: -0.55, keep: 'above' }, [d], 'Flat base');
+      const base = b.add('cut', { axis: 'y', from: 'min', offset: 0.45, keep: 'above' }, [d], 'Flat base');
       b.output(base).pin(d, 'seed', 'Seed').pin(d, 'amount', 'Roughness').pin(d, 'scale', 'Lump size');
       return b.done();
     },
@@ -337,23 +336,23 @@ export const EXAMPLES: Example[] = [
     tags: ['printable', 'learn'],
     build: () => {
       const b = new DocBuilder('Chain', { mmPerUnit: 8, material: 'metal' });
+      // links are 1.6 long; Repeat centres its copies, so the 3 flat links sit at 0, ±2.6 and the 2 upright ones at ±1.3
       const l1 = b.add('link', {
         length: 0.6,
         radius: 0.5,
-        thickness: 0.14,
+        thickness: 0.15,
         rotation: [0, 0, 90],
         color: C.stone,
       });
-      const r1 = b.add('repeat', { countX: 3, countY: 1, countZ: 1, spacing: [2.4, 2, 2] }, [l1]);
+      const r1 = b.add('repeat', { countX: 3, countY: 1, countZ: 1, spacing: [2.6, 2, 2] }, [l1]);
       const l2 = b.add('link', {
         length: 0.6,
         radius: 0.5,
-        thickness: 0.14,
+        thickness: 0.15,
         rotation: [90, 0, 90],
-        position: [1.2, 0, 0],
         color: C.stone,
       });
-      const r2 = b.add('repeat', { countX: 2, countY: 1, countZ: 1, spacing: [2.4, 2, 2] }, [l2]);
+      const r2 = b.add('repeat', { countX: 2, countY: 1, countZ: 1, spacing: [2.6, 2, 2] }, [l2]);
       const u = b.add('union', { smooth: 0 }, [r1, r2]);
       b.output(u);
       return b.done();
@@ -393,18 +392,14 @@ export const EXAMPLES: Example[] = [
     tags: ['learn', 'art'],
     build: () => {
       const b = new DocBuilder('Bent arch');
-      const beam = b.add('box', {
-        size: [3.6, 0.4, 0.5],
-        rounding: 0.12,
-        position: [0, 1.0, 0],
-        color: C.green,
-      });
-      const bend = b.add('bend', { amount: -40 }, [beam]);
-      const rep = b.add('repeat', { countX: 1, countY: 1, countZ: 3, spacing: [2, 2, 0.9] }, [bend]);
+      const beam = b.add('box', { size: [4.2, 0.36, 0.5], rounding: 0.12, color: C.green });
+      const bend = b.add('bend', { amount: 38 }, [beam]);
+      const up = b.add('transform', { position: [0, 0.75, 0] }, [bend]);
+      const rep = b.add('repeat', { countX: 1, countY: 1, countZ: 3, spacing: [2, 2, 0.9] }, [up]);
       const base = b.add('box', {
-        size: [4, 0.25, 3],
+        size: [4.4, 0.25, 3],
         rounding: 0.1,
-        position: [0, -0.25, 0],
+        position: [0, -0.9, 0],
         color: C.stone,
       });
       const u = b.add('union', { smooth: 0.15 }, [rep, base]);
