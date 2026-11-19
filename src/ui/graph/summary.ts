@@ -1,6 +1,7 @@
 import type { GNode } from '../../core/graph/doc';
 import { getDef, paramsOf } from '../../core/nodes/registry';
 import { displayUnit, fmt } from '../format';
+import { decodeOutline } from '../../core/svg';
 
 /** One-line description of a node's key values, shown on the node card. */
 export function nodeSummary(n: GNode, mmPerUnit: number): string {
@@ -16,7 +17,15 @@ export function nodeSummary(n: GNode, mmPerUnit: number): string {
     case 'union':
     case 'subtract':
     case 'intersect':
-      return (p.smooth as number) > 0 ? `smooth ${len(p.smooth as number)}` : 'sharp edges';
+      return (p.smooth as number) > 0
+        ? `${p.edge === 'chamfer' ? 'chamfer' : 'smooth'} ${len(p.smooth as number)}`
+        : 'sharp edges';
+    case 'svg': {
+      const n = decodeOutline(String(p.svg ?? '')).polys.length;
+      return `${n} outline${n === 1 ? '' : 's'}, ${len(p.size as number)}`;
+    }
+    case 'profile':
+      return `${(p.points as number[]).length / 3} points`;
     case 'repeat':
       return `${p.countX} × ${p.countY} × ${p.countZ} copies`;
     case 'radial':

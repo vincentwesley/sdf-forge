@@ -36,6 +36,8 @@ Made by **Vin** · **Vin's Atelier**.
 - **Draw your own outlines.** The Profile node is a point editor: drag points, add them with a click, and make each
   one a sharp corner or a smooth curve. Spin it with Revolve for vases, bottles and chess pieces, or extrude it for
   brackets and plates. Works with mouse, touch and keyboard.
+- **Bring your logo.** Drop an SVG file on the 3D view (or use *Import SVG file*) to turn it into a shape to extrude,
+  stamp or engrave.
 - **Write on things.** A Text node turns any word into a profile: extrude it into a sign or name tag, or subtract
   it to engrave.
 - **Customise templates.** Pin any setting to the *Controls* panel. Printable templates (vase, planter, keychain,

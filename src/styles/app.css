@@ -1589,3 +1589,18 @@ dialog.modal::backdrop {
   font-size: 13px;
   box-shadow: var(--shadow, 0 4px 14px rgb(0 0 0 / 0.2));
 }
+
+/* SVG shape editor */
+.svg-preview {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1;
+  margin-top: 6px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.svg-preview path {
+  fill: var(--accent);
+}

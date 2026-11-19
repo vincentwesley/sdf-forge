@@ -5,6 +5,7 @@ import { type DisplayUnit, displayUnit, fmt, fromHex, parseNumber, toHex } from 
 import { PALETTE } from '../state/ops';
 import { beginGesture } from '../state/store';
 import { PointsField } from './PointsEditor';
+import { SvgField } from './SvgField';
 
 export interface FieldProps {
   def: ParamDef;
@@ -404,7 +405,7 @@ export function TextField({ def, value, onChange, onCommit, pinned, onTogglePin,
 export function ParamField(props: FieldProps) {
   switch (props.def.kind) {
     case 'text':
-      return <TextField {...props} />;
+      return props.def.ui === 'svg' ? <SvgField {...props} /> : <TextField {...props} />;
     case 'float':
     case 'int':
       return <NumberField {...props} />;

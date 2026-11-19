@@ -492,6 +492,32 @@ export const EXAMPLES: Example[] = [
     },
   },
   {
+    id: 'heart-badge',
+    title: 'Heart badge',
+    description:
+      'An SVG drawing extruded into a badge, with a name engraved by a chamfered Subtract. Import your own logo into the SVG shape (Properties → Import SVG file), or type a new name in Controls.',
+    tags: ['printable', 'learn'],
+    build: () => {
+      const b = new DocBuilder('Heart badge', { mmPerUnit: 20 });
+      const heart = b.add('svg', { size: 2.2, color: C.red }, undefined, 'Heart (SVG)');
+      const plate = b.add('extrude', { height: 0.3, rounding: 0.05, position: [0, 0.15, 0] }, [heart]);
+      const name = b.add(
+        'text',
+        { text: 'VIN', size: 0.42, offset: [0, 0.12], color: C.white },
+        undefined,
+        'Name',
+      );
+      const cut = b.add('extrude', { height: 0.2, rounding: 0, position: [0, 0.34, 0] }, [name]);
+      const badge = b.add(
+        'subtract',
+        { smooth: 0.03, edge: 'chamfer', paintCut: true },
+        { base: plate, cutter: cut },
+      );
+      b.output(badge).pin(name, 'text', 'Name').pin(heart, 'size', 'Size');
+      return b.done();
+    },
+  },
+  {
     id: 'gem',
     title: 'Cut gem',
     description:

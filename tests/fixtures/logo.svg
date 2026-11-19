@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A test logo drawn for SDF Forge's tests: a ring with a hole and a small star. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100">
+  <title>Test logo</title>
+  <defs><rect id="unused" width="500" height="500"/></defs>
+  <path fill-rule="evenodd" d="M50 10a40 40 0 1 0 0.01 0zM50 25a25 25 0 1 1-0.01 0z"/>
+  <g transform="translate(100 20) scale(0.6)">
+    <polygon points="0,-30 9,-9 30,-9 13,5 19,28 0,14 -19,28 -13,5 -30,-9 -9,-9"/>
+  </g>
+  <rect x="0" y="0" width="120" height="100" fill="none" stroke="#000"/>
+</svg>

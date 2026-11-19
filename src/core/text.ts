@@ -39,7 +39,67 @@ export function fontReady(): boolean {
   return !!font;
 }
 
-type Seg = [number, number, number, number];
+export type Seg = [number, number, number, number];
+
+/**
+ * Exact signed distance on a regular grid around a set of closed outlines
+ * (line segments). Inside is decided by the non-zero or even-odd rule.
+ */
+export function distanceGrid(
+  segs: Seg[],
+  cellsPerUnit: number,
+  pad: number,
+  rule: 'nonzero' | 'evenodd',
+): { data: Float32Array; w: number; h: number; x0: number; y0: number; cell: number } {
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
+  for (const [a, b, c, d] of segs) {
+    minX = Math.min(minX, a, c);
+    maxX = Math.max(maxX, a, c);
+    minY = Math.min(minY, b, d);
+    maxY = Math.max(maxY, b, d);
+  }
+  const cell = 1 / cellsPerUnit;
+  const x0 = minX - pad,
+    y0 = minY - pad;
+  const w = Math.ceil((maxX - minX + 2 * pad) / cell) + 1;
+  const h = Math.ceil((maxY - minY + 2 * pad) / cell) + 1;
+  const data = new Float32Array(w * h);
+  for (let j = 0; j < h; j++) {
+    const py = y0 + j * cell;
+    for (let i = 0; i < w; i++) {
+      const px = x0 + i * cell;
+      let best = Infinity;
+      let wind = 0;
+      for (let n = 0; n < segs.length; n++) {
+        const sg = segs[n];
+        const ax = sg[0],
+          ay = sg[1],
+          bx = sg[2],
+          by = sg[3];
+        const ex = bx - ax,
+          ey = by - ay;
+        const l2 = ex * ex + ey * ey;
+        let t = l2 > 0 ? ((px - ax) * ex + (py - ay) * ey) / l2 : 0;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const dx = px - ax - ex * t,
+          dy = py - ay - ey * t;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < best) best = d2;
+        // winding number (crossings of a ray towards +x)
+        if (ay <= py) {
+          if (by > py && ex * (py - ay) - (px - ax) * ey > 0) wind++;
+        } else if (by <= py && ex * (py - ay) - (px - ax) * ey < 0) wind--;
+      }
+      const d = Math.sqrt(best);
+      const inside = rule === 'evenodd' ? (wind & 1) !== 0 : wind !== 0;
+      data[j * w + i] = inside ? -d : d;
+    }
+  }
+  return { data, w, h, x0, y0, cell };
+}
 
 function flatten(cmds: PathCommand[], segs: Seg[]) {
   let sx = 0,
@@ -131,45 +191,8 @@ export function textGrid(text: string): TextGrid | null {
   maxX -= ox;
   minY -= oy;
   maxY -= oy;
-  const cell = 1 / CELLS_PER_UNIT;
-  const x0 = minX - PAD,
-    y0 = minY - PAD;
-  const w = Math.ceil((maxX - minX + 2 * PAD) / cell) + 1;
-  const h = Math.ceil((maxY - minY + 2 * PAD) / cell) + 1;
-  const data = new Float32Array(w * h);
-  // row-wise: only segments within reach of the row matter for the winding test;
-  // the distance needs all of them (brute force, fine for short strings)
-  for (let j = 0; j < h; j++) {
-    const py = y0 + j * cell;
-    for (let i = 0; i < w; i++) {
-      const px = x0 + i * cell;
-      let best = Infinity;
-      let wind = 0;
-      for (let n = 0; n < segs.length; n++) {
-        const sg = segs[n];
-        const ax = sg[0],
-          ay = sg[1],
-          bx = sg[2],
-          by = sg[3];
-        const ex = bx - ax,
-          ey = by - ay;
-        const l2 = ex * ex + ey * ey;
-        let t = l2 > 0 ? ((px - ax) * ex + (py - ay) * ey) / l2 : 0;
-        t = t < 0 ? 0 : t > 1 ? 1 : t;
-        const dx = px - ax - ex * t,
-          dy = py - ay - ey * t;
-        const d2 = dx * dx + dy * dy;
-        if (d2 < best) best = d2;
-        // non-zero winding number
-        if (ay <= py) {
-          if (by > py && ex * (py - ay) - (px - ax) * ey > 0) wind++;
-        } else if (by <= py && ex * (py - ay) - (px - ax) * ey < 0) wind--;
-      }
-      const d = Math.sqrt(best);
-      data[j * w + i] = wind !== 0 ? -d : d;
-    }
-  }
-  const grid: TextGrid = { key: s, data, w, h, x0, y0, cell, bounds: [minX, minY, maxX, maxY] };
+  const g = distanceGrid(segs, CELLS_PER_UNIT, PAD, 'nonzero');
+  const grid: TextGrid = { key: s, ...g, bounds: [minX, minY, maxX, maxY] };
   cache.set(s, grid);
   return grid;
 }

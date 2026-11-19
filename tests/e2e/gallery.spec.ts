@@ -19,6 +19,7 @@ const IDS = [
   'morph',
   'pawn',
   'bracket',
+  'heart-badge',
   'gem',
 ];
 
