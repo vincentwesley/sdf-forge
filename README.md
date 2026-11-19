@@ -64,7 +64,7 @@ graph ─► typed expression IR ─┬─► GLSL  ─► WebGL2 ray marcher (u
   Neutral tone mapping, dynamic resolution while you interact and progressive anti-aliasing when you stop.
   It stays interactive even on software rendering.
 
-More detail: [docs/PLAN.md](docs/PLAN.md) · [docs/DECISIONS.md](docs/DECISIONS.md) · [docs/RESEARCH.md](docs/RESEARCH.md) · [docs/RESOURCES.md](docs/RESOURCES.md) (free 3D resources that are safe to use).
+How it compares with other 3D tools: [docs/COMPARISON.md](docs/COMPARISON.md). More detail: [docs/PLAN.md](docs/PLAN.md) · [docs/DECISIONS.md](docs/DECISIONS.md) · [docs/RESEARCH.md](docs/RESEARCH.md) · [docs/RESOURCES.md](docs/RESOURCES.md) (free 3D resources that are safe to use).
 
 ## Quality checks
 

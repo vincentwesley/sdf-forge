@@ -1,7 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Crosshair, Grid2x2, Layers, Minus, Pause, Play, Plus, Scan } from 'lucide-react';
+import {
+  Camera,
+  Crosshair,
+  Grid2x2,
+  Layers,
+  Minus,
+  Pause,
+  Play,
+  Plus,
+  Scan,
+  SquareSplitHorizontal,
+  X,
+} from 'lucide-react';
 import { Renderer, type ViewMode } from '../../render/renderer';
-import { type OrbitCamera, cameraRay, frameBounds } from '../../render/camera';
+import {
+  type OrbitCamera,
+  type StandardView,
+  STANDARD_VIEWS,
+  cameraRay,
+  frameBounds,
+} from '../../render/camera';
+import { DEFAULT_SECTION, type SectionState, sectionPlane } from '../../state/section';
 import { actions, addShape, select, setPlaying, store, toast, useEditor } from '../../state/store';
 import { animatedParams, getScene } from '../../state/scene';
 import { hasAnimation } from '../../core/animation';
@@ -15,6 +34,69 @@ import { WelcomeNudge } from '../Tour';
 import { setActiveRenderer } from '../../render/registry';
 
 let warnedInline = false;
+
+const VIEW_LABELS: Record<StandardView, string> = {
+  front: 'Front',
+  back: 'Back',
+  left: 'Left',
+  right: 'Right',
+  top: 'Top',
+  bottom: 'Bottom',
+  iso: '3/4 view',
+};
+
+/** Look at the shape from a standard direction, keeping zoom and target. */
+function setView(k: StandardView) {
+  const c = store.getState().camera;
+  actions.set({ camera: { ...c, ...STANDARD_VIEWS[k] } });
+}
+
+/** Axis, position and side of the view-only section cut. */
+function SectionPanel({ section }: { section: SectionState }) {
+  const set = (p: Partial<SectionState>) => actions.set({ section: { ...section, ...p } });
+  return (
+    <div className="section-panel" role="group" aria-label="Section view" data-testid="section-panel">
+      <div className="segmented" role="radiogroup" aria-label="Cut across">
+        {(['x', 'y', 'z'] as const).map((a) => (
+          <button
+            key={a}
+            type="button"
+            role="radio"
+            aria-checked={section.axis === a}
+            onClick={() => set({ axis: a })}
+          >
+            {a.toUpperCase()}
+          </button>
+        ))}
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={1}
+        step={0.005}
+        value={section.at}
+        aria-label="Cut position"
+        onChange={(e) => set({ at: parseFloat(e.target.value) })}
+      />
+      <button
+        type="button"
+        className="btn sm"
+        onClick={() => set({ flip: !section.flip })}
+        aria-pressed={section.flip}
+      >
+        Flip
+      </button>
+      <button
+        type="button"
+        className="btn icon sm ghost"
+        aria-label="Close section view"
+        onClick={() => actions.set({ section: null })}
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
 
 /** Replace uniform reads with literal values. */
 export function inlineParams(glsl: string, P: Float32Array): string {
@@ -47,6 +129,8 @@ export function Viewport() {
   const viewMode = useEditor((s) => s.viewMode);
   const grid = useEditor((s) => s.grid);
   const playing = useEditor((s) => s.playing);
+  const section = useEditor((s) => s.section);
+  const ortho = useEditor((s) => !!s.camera.ortho);
   const animated = useEditor((s) => hasAnimation(s.doc));
   /** time origin of the running animation */
   const animStart = useRef(0);
@@ -147,6 +231,7 @@ export function Viewport() {
       grid: s.grid,
       gridStep: 10 / s.doc.settings.mmPerUnit,
       thinLimit: thinMm / s.doc.settings.mmPerUnit,
+      section: sectionPlane(s.section, analysis.bounds),
       theme: SCENE_THEMES[theme],
     });
   }, [theme, thinMm]);
@@ -161,7 +246,8 @@ export function Viewport() {
         s.camera !== p.camera ||
         s.viewMode !== p.viewMode ||
         s.grid !== p.grid ||
-        s.playing !== p.playing
+        s.playing !== p.playing ||
+        s.section !== p.section
       )
         sync();
     });
@@ -283,7 +369,14 @@ export function Viewport() {
     const scene = getScene(s.doc, s.viewRoot, s.selection[0] ?? null);
     const ev = scene.evaluator();
     const { ro, rd } = cameraRay(s.camera, ndcX, ndcY);
-    const t = raycast(ev, ro, rd, scene.analysis.bounds, scene.analysis.lipschitz);
+    const t = raycast(
+      ev,
+      ro,
+      rd,
+      scene.analysis.bounds,
+      scene.analysis.lipschitz,
+      sectionPlane(s.section, scene.analysis.bounds),
+    );
     if (t === null) {
       select([]);
       return;
@@ -464,6 +557,40 @@ export function Viewport() {
               onSelect: () => actions.set({ viewMode: m.id }),
             }))}
           />
+          <Menu
+            label="Camera"
+            buttonClass="btn icon"
+            icon={<Camera size={15} />}
+            testId="camera-menu"
+            items={[
+              ...(Object.keys(VIEW_LABELS) as StandardView[]).map((k) => ({
+                id: k,
+                label: VIEW_LABELS[k],
+                onSelect: () => setView(k),
+              })),
+              {
+                id: 'ortho',
+                label: 'Orthographic (no perspective)',
+                checked: ortho,
+                toggle: true,
+                onSelect: () => {
+                  const c = store.getState().camera;
+                  actions.set({ camera: { ...c, ortho: !c.ortho } });
+                },
+              },
+            ]}
+          />
+          <button
+            type="button"
+            className={`btn icon ${section ? 'active' : ''}`}
+            aria-pressed={!!section}
+            title="Section view: cut the shape open to see inside (view only)"
+            aria-label="Section view"
+            onClick={() => actions.set({ section: section ? null : DEFAULT_SECTION })}
+            data-testid="section-toggle"
+          >
+            <SquareSplitHorizontal size={15} />
+          </button>
           {animated && (
             <button
               type="button"
@@ -497,6 +624,7 @@ export function Viewport() {
             <Scan size={15} />
           </button>
         </div>
+        {section && <SectionPanel section={section} />}
       </div>
 
       <div className="vp-overlay vp-bl">

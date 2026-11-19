@@ -438,3 +438,81 @@ describe('profile (drawn outline)', () => {
     expect((inside / N) * box).toBeCloseTo(vol, 1);
   });
 });
+
+describe('chamfered joins', () => {
+  const two = (type: 'union' | 'intersect' | 'subtract', edge: string, smooth = 0.3) => {
+    const g = new G();
+    const a = g.node('sphere', { radius: 1, position: [-0.6, 0, 0] });
+    const b = g.node('sphere', { radius: 1, position: [0.6, 0, 0] });
+    const params = { smooth, edge };
+    const c =
+      type === 'union'
+        ? g.node('union', params)
+        : type === 'intersect'
+          ? g.node('intersect', params)
+          : g.node('subtract', params);
+    if (type === 'union') g.link(a, c, 'shapes').link(b, c, 'shapes');
+    else if (type === 'intersect') g.link(a, c, 'a').link(b, c, 'b');
+    else g.link(a, c, 'base').link(b, c, 'cutter');
+    g.out(c);
+    return evaluator(g.doc);
+  };
+  const da = (x: number, y: number, z: number) => len(x + 0.6, y, z) - 1;
+  const db = (x: number, y: number, z: number) => len(x - 0.6, y, z) - 1;
+  const pts = randomPoints(800, 2.5, 21);
+
+  it('union, intersect and subtract follow the hg_sdf chamfer formulas', () => {
+    const r = 0.3,
+      s = Math.SQRT1_2;
+    const u = two('union', 'chamfer'),
+      i = two('intersect', 'chamfer'),
+      d = two('subtract', 'chamfer');
+    for (const [x, y, z] of pts) {
+      const a = da(x, y, z),
+        b = db(x, y, z);
+      expect(u.map(x, y, z)).toBeCloseTo(Math.min(a, b, (a + b - r) * s), 5);
+      expect(i.map(x, y, z)).toBeCloseTo(Math.max(a, b, (a + b + r) * s), 5);
+      expect(d.map(x, y, z)).toBeCloseTo(Math.max(a, -b, (a - b + r) * s), 5);
+    }
+  });
+
+  it('a chamfer is flat: points on the bevel line up, unlike a rounded blend', () => {
+    // along the seam plane x = 0 the chamfered union surface is a straight cone line in y
+    const u = two('union', 'chamfer', 0.4);
+    const surfaceY = (z: number) => {
+      let lo = 0,
+        hi = 2;
+      for (let k = 0; k < 60; k++) {
+        const m = (lo + hi) / 2;
+        if (u.map(0, m, z) < 0) lo = m;
+        else hi = m;
+      }
+      return lo;
+    };
+    expect(surfaceY(0)).toBeGreaterThan(Math.sqrt(1 - 0.36)); // the bevel adds material at the seam
+  });
+
+  it('chamfer bounds stay conservative and steps stay safe', () => {
+    const u = two('union', 'chamfer', 0.5);
+    const b = u.bounds.bounds!;
+    const L = u.bounds.lipschitz;
+    expect(L).toBeGreaterThan(1.4);
+    for (const [x, y, z] of randomPoints(2000, 4, 5)) {
+      const v = u.map(x, y, z);
+      const inside =
+        x >= b.min[0] && x <= b.max[0] && y >= b.min[1] && y <= b.max[1] && z >= b.min[2] && z <= b.max[2];
+      if (v < 0) expect(inside).toBe(true);
+      // a step of v/L along any direction never jumps over the surface
+      const step = Math.abs(v) / L;
+      for (const [dx, dy, dz] of [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+        [0.577, 0.577, 0.577],
+      ]) {
+        const w = u.map(x + dx * step, y + dy * step, z + dz * step);
+        if (v > 1e-4) expect(w).toBeGreaterThan(-1e-4);
+      }
+    }
+  });
+});

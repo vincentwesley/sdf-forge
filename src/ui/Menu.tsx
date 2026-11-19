@@ -8,6 +8,8 @@ export interface MenuItem {
   desc?: string;
   icon?: ReactNode;
   checked?: boolean;
+  /** a standalone on/off item (menuitemcheckbox) rather than one choice of a group */
+  toggle?: boolean;
   shortcut?: string;
   disabled?: boolean;
   onSelect: () => void;
@@ -116,7 +118,8 @@ export function Menu({
     }
   };
 
-  const hasChecks = items.some((i) => i.checked !== undefined);
+  const hasRadios = items.some((it) => it.checked !== undefined && !it.toggle);
+  const hasMarks = items.some((it) => it.checked !== undefined);
   return (
     <>
       <button
@@ -157,8 +160,14 @@ export function Menu({
               <div
                 key={it.id}
                 id={`${id}-${i}`}
-                role={hasChecks ? 'menuitemradio' : 'menuitem'}
-                aria-checked={hasChecks ? !!it.checked : undefined}
+                role={
+                  it.toggle
+                    ? 'menuitemcheckbox'
+                    : hasRadios && it.checked !== undefined
+                      ? 'menuitemradio'
+                      : 'menuitem'
+                }
+                aria-checked={it.checked !== undefined ? !!it.checked : undefined}
                 aria-disabled={it.disabled || undefined}
                 className="menu-item"
                 data-active={i === active}
@@ -166,7 +175,7 @@ export function Menu({
                 onPointerMove={() => !it.disabled && setActive(i)}
                 onClick={() => choose(i)}
               >
-                {hasChecks && <span style={{ width: 14 }}>{it.checked && <Check size={14} />}</span>}
+                {hasMarks && <span style={{ width: 14 }}>{it.checked && <Check size={14} />}</span>}
                 {it.icon}
                 <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <span>{it.label}</span>

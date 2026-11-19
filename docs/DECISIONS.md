@@ -93,3 +93,10 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     bounds. Only plain numbers can be animated, so playing never recompiles, and undo history, autosave and model
     exports are unaffected. Animations live on the pin, so share links carry them. Nothing plays until the user
     presses Play, which respects reduced motion.
+21. **Section view and orthographic projection live in the renderer, not the document** (vs. a Cut node, or a
+    camera stored in the doc). A section is a way of looking, so it must never change exports or share links. In
+    the shader it's one more `max()` against a plane, applied only to marching, normals, shadows and AO, so the cut
+    is exact. Cap faces are found where the plane passes through solid (`map(p) < 0`) and are hatched. CPU picking
+    applies the same clip, so a click goes through the removed half. Chamfered joins, by contrast, are part of the
+    shape and live on the combine nodes (structural *Edge* enum). The Lipschitz estimate gets a √2 factor while a
+    chamfer is active.

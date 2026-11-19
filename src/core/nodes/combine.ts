@@ -1,7 +1,27 @@
 import type { NodeDef, ShapeVal } from './types';
-import { expand, intersectBounds, sminBlend, smaxBlend, unionBounds } from './lib';
+import { chamferMax, chamferMin, expand, intersectBounds, sminBlend, smaxBlend, unionBounds } from './lib';
 
-const SMIN = 'Smooth minimum: Inigo Quilez, iquilezles.org/articles/smin (MIT)';
+const SMIN =
+  'Smooth minimum: Inigo Quilez, iquilezles.org/articles/smin (MIT); chamfer: Mercury hg_sdf (MIT)';
+
+/** Rounded (smooth) or chamfered (flat 45° bevel) seam, when Smoothness is above 0. */
+const edgeParam = {
+  key: 'edge',
+  label: 'Edge',
+  kind: 'enum' as const,
+  default: 'round',
+  structural: true,
+  options: [
+    { value: 'round', label: 'Rounded' },
+    { value: 'chamfer', label: 'Chamfered' },
+  ],
+  help: 'Rounded melts the shapes together like clay. Chamfered cuts a flat 45° bevel along the seam, like a machined part.',
+  visibleIf: (p: Record<string, unknown>) => (p.smooth as number) > 0,
+};
+const chamfered = (value: (k: string) => unknown) => value('edge') === 'chamfer';
+/** a 45° chamfer can make the field up to √2 steep where both inputs' gradients agree */
+const chamferL = (params: Record<string, unknown>, l: number) =>
+  params.edge === 'chamfer' && (params.smooth as number) > 0 ? l * Math.SQRT2 : l;
 
 const smoothParam = {
   key: 'smooth',
@@ -24,7 +44,7 @@ export const union: NodeDef = {
   inputs: [{ key: 'shapes', label: 'Shapes', type: 'sdf', multi: true }],
   output: 'sdf',
   exactness: 'bound',
-  params: [smoothParam],
+  params: [smoothParam, edgeParam],
   emit: ({ ir, inputs, num, value, empty }) => {
     const list = inputs('shapes');
     if (list.length === 0) return empty();
@@ -33,9 +53,10 @@ export const union: NodeDef = {
     let acc: ShapeVal = list[0];
     for (let i = 1; i < list.length; i++) {
       const b = list[i];
-      if (sharp) {
+      if (sharp || chamfered(value)) {
         const aLess = ir.lt(acc.d, b.d);
-        acc = { d: ir.min(acc.d, b.d), col: ir.select(aLess, acc.col, b.col) };
+        const d = sharp ? ir.min(acc.d, b.d) : chamferMin(ir, acc.d, b.d, k);
+        acc = { d, col: ir.select(aLess, acc.col, b.col) };
       } else {
         const [d, t] = sminBlend(ir, acc.d, b.d, k);
         acc = { d, col: ir.mix(acc.col, b.col, t) };
@@ -44,7 +65,7 @@ export const union: NodeDef = {
     return acc;
   },
   bounds: ({ inputs, params }) => expand(unionBounds(inputs('shapes')), params.smooth as number),
-  lipschitz: ({ inputs }) => Math.max(1, ...inputs('shapes')),
+  lipschitz: ({ inputs, params }) => chamferL(params, Math.max(1, ...inputs('shapes'))),
   credit: SMIN,
 };
 
@@ -63,6 +84,7 @@ export const subtract: NodeDef = {
   exactness: 'bound',
   params: [
     smoothParam,
+    edgeParam,
     {
       key: 'paintCut',
       label: 'Colour cut with cutter',
@@ -84,11 +106,18 @@ export const subtract: NodeDef = {
       const cutWins = ir.lt(a.d, nb);
       return { d: ir.max(a.d, nb), col: paint ? ir.select(cutWins, b.col, a.col) : a.col };
     }
+    if (chamfered(value)) {
+      const nb = ir.neg(b.d);
+      return {
+        d: chamferMax(ir, a.d, nb, num('smooth')),
+        col: paint ? ir.select(ir.lt(a.d, nb), b.col, a.col) : a.col,
+      };
+    }
     const [d, t] = smaxBlend(ir, a.d, ir.neg(b.d), num('smooth'));
     return { d, col: paint ? ir.mix(a.col, b.col, t) : a.col };
   },
   bounds: ({ input, params }) => expand(input('base'), params.smooth as number),
-  lipschitz: ({ input }) => Math.max(1, input('base'), input('cutter')),
+  lipschitz: ({ input, params }) => chamferL(params, Math.max(1, input('base'), input('cutter'))),
   credit: SMIN,
 };
 
@@ -105,11 +134,15 @@ export const intersect: NodeDef = {
   ],
   output: 'sdf',
   exactness: 'bound',
-  params: [smoothParam],
+  params: [smoothParam, edgeParam],
   emit: ({ ir, input, num, value, empty }) => {
     const a = input('a');
     const b = input('b');
     if (!a || !b) return empty();
+    if (chamfered(value) && (value('smooth') as number) > 0) {
+      const aWins = ir.lt(b.d, a.d);
+      return { d: chamferMax(ir, a.d, b.d, num('smooth')), col: ir.select(aWins, a.col, b.col) };
+    }
     if ((value('smooth') as number) <= 0) {
       const aWins = ir.lt(b.d, a.d);
       return { d: ir.max(a.d, b.d), col: ir.select(aWins, a.col, b.col) };
@@ -118,7 +151,7 @@ export const intersect: NodeDef = {
     return { d, col: ir.mix(a.col, b.col, t) };
   },
   bounds: ({ input, params }) => expand(intersectBounds([input('a'), input('b')]), params.smooth as number),
-  lipschitz: ({ input }) => Math.max(1, input('a'), input('b')),
+  lipschitz: ({ input, params }) => chamferL(params, Math.max(1, input('a'), input('b'))),
   credit: SMIN,
 };
 

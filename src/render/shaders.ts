@@ -49,10 +49,20 @@ uniform float uFrame;
 uniform sampler2D uEnv;    // pre-filtered studio reflections (RGB9E5 mip chain)
 uniform float uEnvOn;
 uniform float uEnvYaw;
+uniform vec4 uSection;     // section plane: xyz normal, w offset; zero normal = off
+uniform float uOrtho;
+uniform float uCamDist;
 
 out vec4 outColor;
 
 ${scene}
+
+// the scene as drawn: optionally cut open by the section plane (view only)
+bool sectionOn() { return dot(uSection.xyz, uSection.xyz) > 0.5; }
+float mapS(vec3 p) {
+  float d = map(p);
+  return sectionOn() ? max(d, dot(p, uSection.xyz) - uSection.w) : d;
+}
 
 // ---------------------------------------------------------------------------
 
@@ -73,7 +83,7 @@ float march(vec3 ro, vec3 rd, float tmin, float tmax, float pixelAngle) {
     if (i >= uMaxSteps) break;
     gSteps = i;
     vec3 p = ro + rd * t;
-    float d = map(p) * uStepScale;
+    float d = mapS(p) * uStepScale;
     float eps = max(1e-4, pixelAngle * t);
     if (abs(d) < eps) return t;
     t += d;
@@ -85,8 +95,8 @@ float march(vec3 ro, vec3 rd, float tmin, float tmax, float pixelAngle) {
 vec3 calcNormal(vec3 p, float t) {
   float h = max(1e-4, 5e-4 * t);
   const vec2 k = vec2(1.0, -1.0);
-  return normalize(k.xyy * map(p + k.xyy * h) + k.yyx * map(p + k.yyx * h) +
-                   k.yxy * map(p + k.yxy * h) + k.xxx * map(p + k.xxx * h));
+  return normalize(k.xyy * mapS(p + k.xyy * h) + k.yyx * mapS(p + k.yyx * h) +
+                   k.yxy * mapS(p + k.yxy * h) + k.xxx * mapS(p + k.xxx * h));
 }
 
 // Soft shadow, improved technique (Inigo Quilez, "rmshadows").
@@ -104,7 +114,7 @@ float softShadow(vec3 ro, vec3 rd, float tmin, float tmax, float w) {
   int n = uShadowQuality > 0.5 ? 64 : 24;
   for (int i = 0; i < 64; i++) {
     if (i >= n) break;
-    float h = map(ro + rd * t) * uStepScale;
+    float h = mapS(ro + rd * t) * uStepScale;
     float y = h * h / (2.0 * ph);
     float d = sqrt(max(h * h - y * y, 0.0));
     res = min(res, d / (w * max(0.0, t - y)));
@@ -120,7 +130,7 @@ float calcAO(vec3 p, vec3 n) {
   float occ = 0.0, sca = 1.0;
   for (int i = 0; i < 5; i++) {
     float h = 0.01 + 0.12 * float(i) / 4.0;
-    float d = map(p + h * n);
+    float d = mapS(p + h * n);
     occ += (h - d) * sca;
     sca *= 0.95;
   }
@@ -175,6 +185,12 @@ vec3 shade(vec3 p, vec3 rd, float t) {
   vec4 mc = mapColor(p);
   vec3 base = pow(clamp(mc.rgb, 0.0, 1.0), vec3(2.2));
   if (uMode == 1) return n * 0.5 + 0.5;
+  // section cap: where the cut plane passes through solid material, hatch it like a drawing
+  if (sectionOn() && abs(dot(p, uSection.xyz) - uSection.w) < max(2e-3, 0.004 * t) && map(p) < 0.0) {
+    float hatchWidth = 0.06;
+    float stripe = step(0.5, fract(dot(p, vec3(1.0, 1.0, -1.0)) / hatchWidth));
+    base = mix(base * 0.35, mix(base, vec3(0.9, 0.3, 0.2), 0.45), stripe);
+  }
 
   float rough = uMaterial == 0 ? 0.65 : (uMaterial == 1 ? 0.16 : 0.3);
   float metal = uMaterial == 2 ? 1.0 : 0.0;
@@ -254,6 +270,13 @@ void main() {
   vec3 rd = normalize(uCamRot * vec3(ndc * uTanFov, -1.0));
   vec3 ro = uCamPos;
   float pixelAngle = uTanFov * 2.0 / uRes.y * 0.75;
+  if (uOrtho > 0.5) {
+    // parallel rays from a plane pulled back behind the camera
+    float H = uTanFov * uCamDist;
+    ro = uCamPos + uCamRot * vec3(ndc * H, 0.0) + uCamRot[2] * (uCamDist * 2.0);
+    rd = -uCamRot[2];
+    pixelAngle = H * 2.0 / uRes.y * 0.75 / (uCamDist * 3.0);
+  }
 
   vec3 col = background(rd, uv);
   float alpha = uTransparentBg > 0.5 ? 0.0 : 1.0;
@@ -286,7 +309,7 @@ void main() {
     float occ = 1.0;
     if (uEmpty == 0) {
       // contact darkening under the shape
-      float d0 = map(vec3(p.x, groundY + 0.05, p.z));
+      float d0 = mapS(vec3(p.x, groundY + 0.05, p.z));
       occ = 0.55 + 0.45 * smoothstep(0.0, 0.6, d0);
     }
     vec3 g = uGroundCol * mix(0.55, 1.0, sh) * occ;

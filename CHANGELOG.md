@@ -6,6 +6,10 @@ All notable changes to SDF Forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Chamfered joins**: Union, Subtract and Intersect have an *Edge* choice, Rounded or Chamfered (a flat 45° bevel, Mercury hg_sdf formulas). The Shelf bracket's screw holes are now countersunk.
+- **Section view**: cut the shape open along X, Y or Z with a position slider and Flip. The cut faces are hatched like a technical drawing, picking goes through the removed half, and exports are unaffected.
+- **Camera menu**: front, back, left, right, top, bottom and ¾ views, plus orthographic (no-perspective) projection.
+- `docs/COMPARISON.md`: a feature comparison with Womp, MagicaCSG, Tinkercad, Spline, Fusion 360/Shapr3D and Substance Modeler, and the roadmap it led to.
 - **Illustrated user guide (PDF, 13 pages)**: why use SDF Forge, a tour of the screen, a first shape step by step, going further, printing and other exports, templates, sharing and animation, nine real-life use cases, and tips. It's built from real screenshots by `npm run guide` and linked from Help → *User guide*, the welcome card, About and the README.
 - **Animated Controls**: click *Animate* on a pinned setting to swing it between two values (From, To, seconds per cycle, eased). The 3D view gets a Play button, and turntable videos can record the animation, with or without orbiting. Animations are stored in share links. The document and undo history are never touched while playing. *Sphere to cube* now animates.
 - The saved light/dark theme is applied before the first paint (no dark flash on load).

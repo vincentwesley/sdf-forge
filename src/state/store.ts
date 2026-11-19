@@ -6,6 +6,7 @@ import { type OrbitCamera, defaultCamera } from '../render/camera';
 import type { ViewMode } from '../render/renderer';
 import * as ops from './ops';
 import type { PinAnim } from '../core/animation';
+import type { SectionState } from './section';
 import { applyLayout, isTidy } from '../core/graph/layout';
 
 export type ThemePref = 'system' | 'dark' | 'light';
@@ -50,6 +51,8 @@ export interface EditorState {
   frameRequest: number;
   /** animated Controls are playing in the viewport */
   playing: boolean;
+  /** view-only section cut (null = off) */
+  section: SectionState | null;
   narrowTab: NarrowTab;
   dialog: DialogId;
   palette: boolean;
@@ -102,6 +105,7 @@ export const store = createStore<EditorState>(() => ({
   camera: defaultCamera(),
   frameRequest: 0,
   playing: false,
+  section: null,
   narrowTab: 'graph',
   dialog: null,
   palette: false,
@@ -231,6 +235,7 @@ export function loadDoc(doc: SdfDoc, opts: { keepHistory?: boolean; rememberPrev
     mergeKey: null,
     frameRequest: s.frameRequest + 1,
     playing: false,
+    section: null,
     restorable: opts.rememberPrevious && s.doc.nodes.length > 1 ? s.doc : null,
   });
 }
