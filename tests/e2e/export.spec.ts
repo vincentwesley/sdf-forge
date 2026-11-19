@@ -56,7 +56,7 @@ test('export 3MF: zip package with millimetres, shape colours, credit and a prev
   await expect(dlg.getByTestId('export-result')).toContainText('Watertight and manifold');
 });
 
-test('export GLB and OBJ', async ({ page }) => {
+test('export GLB, OBJ and USDZ', async ({ page }) => {
   test.setTimeout(120_000);
   await openApp(page);
   await page.getByTestId('open-export').click();
@@ -75,6 +75,13 @@ test('export GLB and OBJ', async ({ page }) => {
   const text = readFileSync((await obj.path())!, 'utf8');
   expect(text.startsWith("# SDF Forge by Vin's Atelier")).toBe(true);
   expect(text).toMatch(/\nf \d+\/\/\d+/);
+  await dlg.getByTestId('fmt-usdz').click();
+  const [usdz] = await Promise.all([page.waitForEvent('download'), dlg.getByTestId('export-run').click()]);
+  expect(usdz.suggestedFilename()).toBe('clay-blend.usdz');
+  const files = unzip(new Uint8Array(readFileSync((await usdz.path())!)));
+  const layer = new TextDecoder().decode(files.get('model.usda')!);
+  expect(layer).toContain('metersPerUnit = 0.001');
+  expect(layer.match(/def Material/g)).toHaveLength(3);
 });
 
 test('export a PNG render and shader code', async ({ page }) => {

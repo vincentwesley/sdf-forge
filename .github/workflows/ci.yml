@@ -48,10 +48,12 @@ jobs:
           python-version: '3.12'
       - run: npm ci
       - run: pip install -r scripts/requirements.txt
-      - name: Export every gallery shape and reference shapes (STL, 3MF, GLB, OBJ)
+      - name: Export every gallery shape and reference shapes (STL, 3MF, GLB, OBJ, USDZ)
         run: npx tsx scripts/export-meshes.ts artifacts/meshes
       - name: Watertight, manifold, size and volume (trimesh)
         run: python scripts/validate_meshes.py artifacts/meshes
+      - name: USDZ / AR Quick Look compliance (Pixar USD, ARKit rules)
+        run: python scripts/validate_usdz.py artifacts/meshes
       - name: glTF validity (Khronos glTF-Validator)
         run: node scripts/validate-gltf.mjs artifacts/meshes
       - uses: actions/upload-artifact@v7

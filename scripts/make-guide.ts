@@ -106,6 +106,8 @@ figcaption { font-size: 9pt; color: #57585f; margin-top: 1.5mm; }
 table { border-collapse: collapse; width: 100%; font-size: 9.6pt; margin: 2mm 0 4mm; }
 th, td { text-align: left; padding: 1.6mm 2mm; border-bottom: 1px solid #e0e0dc; vertical-align: top; }
 th { background: #f4f4f2; font-weight: 600; }
+table.compact { font-size: 9pt; margin-bottom: 0; }
+table.compact th, table.compact td { padding: 1.1mm 2mm; line-height: 1.35; }
 .cover { height: 260mm; display: flex; flex-direction: column; }
 .cover .brand { display: flex; align-items: center; gap: 3mm; font-weight: 700; font-size: 13pt; }
 .cover .brand img { width: 9mm; }
@@ -208,8 +210,8 @@ ${fig(
 The <b>+</b> holds more shapes, like Text and Profile.</div></li>
 <li><span class="k">2</span><div><b>3D view.</b> Drag to turn around the shape, right-drag to slide, scroll to zoom. Click a
 part to select it, then drag the coloured arrows to move it.</div></li>
-<li><span class="k">3</span><div><b>View options.</b> Shaded or <i>Print check</i> view, the floor grid (10 mm squares), and
-<i>Frame</i> to bring the shape back into view.</div></li>
+<li><span class="k">3</span><div><b>View options.</b> Shaded or <i>Print check</i> view, the camera menu (front, top, side
+views and a no-perspective mode), a <i>section</i> cut to see inside, the floor grid (10 mm squares), and <i>Frame</i>.</div></li>
 <li><span class="k">4</span><div><b>Graph.</b> The recipe of your shape: boxes (“nodes”) joined by wires. You can ignore it
 at first; it's there when you want full control.</div></li>
 <li><span class="k">5</span><div><b>Properties.</b> The settings of whatever is selected, in millimetres and degrees,
@@ -234,7 +236,8 @@ palette, and this guide.</div></li>
 (<kbd>Ctrl</kbd>+<kbd>K</kbd>, or <kbd>⌘</kbd>+<kbd>K</kbd> on a Mac) and choose <i>New empty shape</i>. Or just keep the shape you see.</li>
 <li><b>Add a shape.</b> Click the cube in the Add toolbar. It appears next to what's there, already selected.</li>
 <li><b>Move it.</b> Drag one of the coloured arrows in the 3D view (red = left/right, green = up/down, blue =
-front/back). Hold <kbd>Shift</kbd> for fine steps. Or type exact positions in the Properties panel.</li>
+front/back). Hold <kbd>Shift</kbd> for fine steps. Press <kbd>E</kbd> for rotation rings and <kbd>R</kbd> to scale
+(<kbd>W</kbd> goes back to moving), or type exact values in the Properties panel.</li>
 <li><b>Blend it.</b> In Properties, raise <i>Blend with the other shapes</i>. The parts melt together smoothly.</li>
 <li><b>Carve a hole.</b> Switch the toolbar from <i>Add</i> to <i>Carve</i>, then click the cylinder. It cuts through
 whatever it touches; move it like any other part.</li>
@@ -268,6 +271,15 @@ into the <b>Output</b>, which is what you see and export.</p>
 </div>
 <div>${fig(s.graph, 'A sphere, box and torus joined, then carved by a cylinder.')}</div>
 </div>
+<h3>Measure, look inside, line things up</h3>
+<ul>
+<li><b>Measure</b> (<kbd>M</kbd>): click two points on the shape to read the distance in millimetres.</li>
+<li><b>Section view</b>: cut the shape open along X, Y or Z to check walls and hidden spaces. It only changes the
+view; exports keep the whole shape.</li>
+<li><b>Camera menu</b>: front, top and side views, and an orthographic (no-perspective) mode for lining parts up.</li>
+<li><b>Chamfered edges</b>: on Union, Subtract and Intersect, set <i>Edge</i> to <i>Chamfered</i> for a flat 45° bevel,
+such as countersunk screw holes, instead of a rounded blend.</li>
+</ul>
 <h3>Handy modifiers</h3>
 <table>
 <tr><th>Modifier</th><th>What it does</th><th>Try it for</th></tr>
@@ -317,12 +329,13 @@ material, and print.</p>
 </div>
 </div>
 <h3>Other ways to export</h3>
-<table>
+<table class="compact">
 <tr><th>Format</th><th>Use it for</th><th>Notes</th></tr>
 <tr><td><b>3MF</b></td><td>Modern slicers</td><td>Millimetres, your shapes' colours as a palette, a preview image, small files</td></tr>
 <tr><td><b>STL</b></td><td>Any slicer or 3D printing service</td><td>Millimetres, Z up</td></tr>
 <tr><td><b>GLB</b> (glTF)</td><td>Game engines (Unity, Godot, Unreal), Blender, web viewers, AR</td><td>Colours and smooth normals included</td></tr>
 <tr><td><b>OBJ</b></td><td>Almost any 3D app</td><td>Millimetres, vertex colours</td></tr>
+<tr><td><b>USDZ</b></td><td>AR on iPhone and iPad (open the file to place it in your room), Apple apps</td><td>Real size, colours</td></tr>
 <tr><td><b>PNG image</b></td><td>Posts, thumbnails, documents</td><td>Up to 4K, transparent background option</td></tr>
 <tr><td><b>Turntable video</b></td><td>Social media, portfolios, product pages</td><td>MP4 or WebM; can also play your animation</td></tr>
 <tr><td><b>Shader code</b></td><td>Shadertoy and graphics programming</td><td>A complete, working shader</td></tr>
@@ -380,7 +393,7 @@ ${caseCard(
   'Personal gifts and small-batch merch',
   'Gift makers, small shops, clubs and teams',
   'Name tags, keychains and badges with a person’s name or a team logo feel special, but custom orders are slow and pricey.',
-  'Open the <i>Keychain</i> template, type the name in its Name Control, choose colours (3MF keeps them as separate filaments) and print a batch. Share the link so customers can preview their own.',
+  'Open the <i>Keychain</i> or <i>Heart badge</i> template, type the name in its Name Control, or drop your own logo (SVG file) onto the 3D view. 3MF keeps the colours as separate filaments; share the link so customers can preview their own.',
 )}
 ${caseCard(
   'planter',
@@ -422,7 +435,7 @@ ${caseCard(
   'Product ideas and quick mock-ups',
   'Designers, inventors, small businesses',
   'Before paying for CAD work or tooling, you want to see the idea in 3D and maybe hold a printed version.',
-  'Sketch the form with shapes and outlines, set real dimensions, print a prototype, and share a link with your team or client for feedback.',
+  'Sketch the form with shapes and outlines, set real dimensions, check it with the section view and measure tool, print a prototype, and send a USDZ so your client can see it in their room on an iPhone.',
 )}
 ${caseCard(
   'twisted-tower',
@@ -445,6 +458,8 @@ ${caseCard(
 <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd> / <kbd>D</kbd></td><td>Copy / paste / duplicate</td></tr>
 <tr><td><kbd>Delete</kbd></td><td>Delete the selection</td></tr>
 <tr><td><kbd>F</kbd></td><td>Frame the shape</td></tr>
+<tr><td><kbd>W</kbd> / <kbd>E</kbd> / <kbd>R</kbd></td><td>Move / rotate / scale the selected part</td></tr>
+<tr><td><kbd>M</kbd></td><td>Measure tool</td></tr>
 <tr><td><kbd>1</kbd>–<kbd>4</kbd></td><td>Shaded, Print check, Normals, Cost views</td></tr>
 <tr><td><kbd>A</kbd> or right-click</td><td>Add a node (in the graph)</td></tr>
 <tr><td><kbd>?</kbd></td><td>All shortcuts</td></tr>

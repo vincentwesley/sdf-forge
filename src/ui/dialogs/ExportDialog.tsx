@@ -43,6 +43,11 @@ const FORMATS: { id: MeshFormat; label: string; desc: string }[] = [
   },
   { id: 'glb', label: 'GLB', desc: 'Games, Blender, web (glTF, colours)' },
   { id: 'obj', label: 'OBJ', desc: 'Any 3D app (millimetres, colours)' },
+  {
+    id: 'usdz',
+    label: 'USDZ',
+    desc: 'AR on iPhone and iPad (open the file to place it in your room at real size), Apple apps',
+  },
 ];
 
 /** A small PNG of the current view for 3MF previews; null if rendering is unavailable. */

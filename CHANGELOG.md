@@ -6,6 +6,7 @@ All notable changes to SDF Forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **USDZ export** for AR Quick Look on iPhone and iPad: open the file to place your model in the room at real size. Millimetres, one material per shape colour, credited. CI validates every file with Pixar's USD library and Apple's ARKit compliance rules (`scripts/validate_usdz.py`).
 - **SVG shape node**: import a logo or drawing from an SVG file (Import button, paste the code, or drop the file on the 3D view). It supports paths with arcs, rect, circle, ellipse, polygon, transforms on groups, and even-odd holes; strokes and hidden elements are skipped. Use it for badges, signs, stamps and engravings. New *Heart badge* example.
 - **Rotate and scale gizmo modes** (W / E / R, or the Move / Rotate / Scale buttons): drag a ring to turn the selected part about a world axis (Ctrl snaps to 15°), or drag a square to scale it. All handles work with the arrow keys.
 - **Measure tool** (M): click two points on the shape to read the distance in millimetres, with its X, Y and Z parts. It works through section cuts.
