@@ -161,6 +161,11 @@ function useShortcuts() {
         else select([]);
       } else if (e.key === 'f' || e.key === 'F') {
         actions.set({ frameRequest: s.frameRequest + 1 });
+      } else if ('wWeErR'.includes(e.key) && e.key.length === 1 && s.selection.length) {
+        const k = e.key.toLowerCase();
+        actions.set({ gizmoMode: k === 'w' ? 'move' : k === 'e' ? 'rotate' : 'scale' });
+      } else if (e.key === 'm' || e.key === 'M') {
+        actions.set({ measure: s.measure ? null : [] });
       } else if (e.key === 'g' || e.key === 'G') {
         actions.set({ grid: !s.grid });
       } else if (MODE_KEYS[e.key] && !t.closest('.react-flow')) {

@@ -436,6 +436,9 @@ textarea {
 .vp-bl {
   left: 10px;
   bottom: 10px;
+  /* tools stay at the bottom; status messages stack above them */
+  flex-direction: column-reverse;
+  align-items: flex-start;
 }
 .vp-br {
   right: 10px;
@@ -1513,6 +1516,7 @@ dialog.modal::backdrop {
   margin: 0 0 6px;
 }
 .anim-toggle.active,
+.btn.active,
 .btn.icon.active {
   background: var(--accent-soft);
   border-color: var(--accent);
@@ -1542,4 +1546,46 @@ dialog.modal::backdrop {
 .section-panel input[type='range'] {
   width: 120px;
   accent-color: var(--accent);
+}
+
+/* measure tool */
+.measure-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.measure-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+.measure-dot {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 2;
+}
+.measure-label {
+  fill: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgb(0 0 0 / 0.65);
+  stroke-width: 4px;
+}
+.measure-panel {
+  position: absolute;
+  left: 50%;
+  top: 60px;
+  max-width: calc(100% - 20px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: var(--shadow, 0 4px 14px rgb(0 0 0 / 0.2));
 }

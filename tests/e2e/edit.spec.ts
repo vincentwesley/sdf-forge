@@ -44,8 +44,8 @@ test('clicking the shape selects the part under the pointer', async ({ page }) =
   await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
   const sel = (await page.evaluate(() => window.sdfForge.state())).selection;
   expect(sel.length).toBe(1);
-  // click empty space clears the selection
-  await page.mouse.click(b.x + 20, b.y + b.height - 20);
+  // click empty space (above the floor, clear of the toolbars) clears the selection
+  await page.mouse.click(b.x + b.width / 2, b.y + 70);
   expect((await page.evaluate(() => window.sdfForge.state())).selection).toEqual([]);
 });
 

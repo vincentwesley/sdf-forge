@@ -27,8 +27,8 @@ own way: free, in the browser, private, and printable by default.
 | Section (cut-away) view | — | — | — | — | ✅ | **✅ X/Y/Z, position, flip; hatched caps** |
 | Standard views + orthographic | 🟡 | ✅ | ✅ | ✅ | ✅ | **✅ Camera menu** |
 | Move gizmo | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Rotate / scale gizmo | ✅ | ✅ | ✅ | ✅ | ✅ | Planned (next) |
-| Measure / ruler | — | — | ✅ | — | ✅ | Planned (next) |
+| Rotate / scale gizmo | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ W / E / R modes; rings and scale handles** |
+| Measure / ruler | — | — | ✅ | — | ✅ | **✅ Measure tool (M): distance and X/Y/Z parts in mm** |
 | SVG import → 3D | ✅ | — | ✅ | ✅ | ✅ | Planned |
 | Text | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | Draw a custom outline / lathe | ✅ | 🟡 | 🟡 | ✅ | ✅ | ✅ Profile node |
@@ -61,16 +61,18 @@ own way: free, in the browser, private, and printable by default.
 * **Standard views and orthographic projection.** Front, back, left, right, top, bottom and a ¾ view, plus a
   no-perspective mode for lining things up and taking drawing-like screenshots. Every CAD tool has these.
 
+* **Rotate and scale gizmo modes** (W / E / R, as in Unity, Unreal and Maya). Rings turn a part about a world axis,
+  even inside nested transforms; Ctrl snaps to 15°. Square handles scale it. Arrow keys work on every handle.
+* **Measure tool** (M): click two points on the surface and read the distance in mm, with its X/Y/Z parts, like
+  Tinkercad's ruler or Fusion's Measure. Clicks go through a section cut, so inner walls can be measured too.
+
 ## Planned next, most valuable first
 
-1. **Rotate and scale gizmo modes**, so parts can be turned and resized in the 3D view, not only moved.
-2. **Measure tool**: click two points on the surface and read the distance in mm, like Tinkercad's ruler or
-   Fusion's Measure.
-3. **SVG import**: turn a logo or drawing into a profile for keychains, signs and stamps, like Tinkercad and Womp.
+1. **SVG import**: turn a logo or drawing into a profile for keychains, signs and stamps, like Tinkercad and Womp.
    It can reuse the exact distance grid already used for Text.
-4. **USDZ export** for AR Quick Look on iPhone and iPad, like Spline and Womp. It can be validated in CI with the
+2. **USDZ export** for AR Quick Look on iPhone and iPad, like Spline and Womp. It can be validated in CI with the
    open-source `usd-core` checker.
-5. **Per-shape material** (metal handle on a clay mug), like Womp.
+3. **Per-shape material** (metal handle on a clay mug), like Womp.
 
 ## Deliberately not planned
 

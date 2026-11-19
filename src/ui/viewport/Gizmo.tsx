@@ -1,8 +1,8 @@
 import { useRef } from 'react';
 import { type RefObject } from 'react';
-import { project, type Vec3 } from '../../render/camera';
+import { cameraBasis, orthoHalfHeight, project, type Vec3 } from '../../render/camera';
 import { beginGesture, endMerge, setParam, useEditor, store } from '../../state/store';
-import { placementOf, worldDeltaToParam } from './gizmoMath';
+import { placementOf, rotateParam, worldDeltaToParam } from './gizmoMath';
 
 const AXES: { key: 'x' | 'y' | 'z'; dir: Vec3; color: string }[] = [
   { key: 'x', dir: [1, 0, 0], color: '#ef5b5b' },
@@ -23,6 +23,7 @@ export function Gizmo({
   onInteract: () => void;
 }) {
   const sel = useEditor((s) => s.selection[0] ?? null);
+  const mode = useEditor((s) => s.gizmoMode);
   const doc = useEditor((s) => s.doc);
   const camera = useEditor((s) => s.camera);
   const viewMode = useEditor((s) => s.viewMode);
@@ -35,8 +36,10 @@ export function Gizmo({
     h = canvas.clientHeight;
   const o = project(camera, pl.origin, w, h);
   if (!o) return null;
-  // world length that maps to ~70 px at the origin's depth
-  const unitPx = h / (2 * o.depth * Math.tan(((camera.fov / 2) * Math.PI) / 180));
+  // pixels per world unit at the origin's depth (constant in orthographic views)
+  const unitPx = camera.ortho
+    ? h / (2 * orthoHalfHeight(camera))
+    : h / (2 * o.depth * Math.tan(((camera.fov / 2) * Math.PI) / 180));
   const len = 72 / unitPx;
   const mm = doc.settings.mmPerUnit;
   const node = doc.nodes.find((n) => n.id === sel)!;
@@ -133,6 +136,178 @@ export function Gizmo({
       moveBy(world);
     }
   };
+
+  // ---- rotate: one ring per world axis -------------------------------------
+  if (mode === 'rotate') {
+    const back = cameraBasis(camera).back;
+    const turn = (axis: Vec3, angle: number, merge = true) => {
+      const cur = store.getState().doc.nodes.find((n) => n.id === sel);
+      if (!cur) return;
+      setParam(sel, 'rotation', rotateParam(pl, cur.params.rotation as number[], axis, angle), merge);
+      onInteract();
+    };
+    const startTurn = (e: React.PointerEvent, axis: Vec3) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const el = e.currentTarget as Element;
+      el.setPointerCapture(e.pointerId);
+      beginGesture();
+      const r = (el.closest('svg') as SVGSVGElement).getBoundingClientRect();
+      const ang = (ev: { clientX: number; clientY: number }) =>
+        Math.atan2(ev.clientY - r.top - o.y, ev.clientX - r.left - o.x);
+      const a0 = ang(e);
+      const startRot = [...(node.params.rotation as number[])];
+      // screen angles grow clockwise (y down): a ring facing the camera turns the other way
+      const sign = axis[0] * back[0] + axis[1] * back[1] + axis[2] * back[2] > 0 ? -1 : 1;
+      const move = (ev: PointerEvent) => {
+        let delta = ang(ev) - a0;
+        if (ev.ctrlKey || ev.metaKey) delta = Math.round(delta / (Math.PI / 12)) * (Math.PI / 12); // 15° steps
+        setParam(sel, 'rotation', rotateParam(pl, startRot, axis, sign * delta));
+        onInteract();
+      };
+      const up = () => {
+        el.removeEventListener('pointermove', move as EventListener);
+        el.removeEventListener('pointerup', up);
+        el.removeEventListener('pointercancel', up);
+        endMerge();
+      };
+      el.addEventListener('pointermove', move as EventListener);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    };
+    const radius = 78 / unitPx;
+    return (
+      <svg className="gizmo" width={w} height={h} role="group" aria-label="Rotate gizmo">
+        {AXES.map((a, ai) => {
+          // two unit vectors perpendicular to the axis
+          const u: Vec3 = ai === 0 ? [0, 1, 0] : [1, 0, 0];
+          const v: Vec3 = [
+            a.dir[1] * u[2] - a.dir[2] * u[1],
+            a.dir[2] * u[0] - a.dir[0] * u[2],
+            a.dir[0] * u[1] - a.dir[1] * u[0],
+          ];
+          const pts: string[] = [];
+          for (let k = 0; k <= 64; k++) {
+            const t = (k / 64) * Math.PI * 2;
+            const p = project(
+              camera,
+              [0, 1, 2].map((i) => pl.origin[i] + radius * (u[i] * Math.cos(t) + v[i] * Math.sin(t))) as Vec3,
+              w,
+              h,
+            );
+            if (p) pts.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`);
+          }
+          const d = `M${pts.join('L')}`;
+          return (
+            <g
+              key={a.key}
+              className="handle"
+              tabIndex={0}
+              role="slider"
+              aria-label={`Rotate around ${a.key.toUpperCase()}`}
+              aria-valuetext="Arrow keys turn by 5 degrees, Shift by 15"
+              aria-valuenow={(node.params.rotation as number[])[ai]}
+              onPointerDown={(e) => startTurn(e, a.dir)}
+              onKeyDown={(e) => {
+                const step = ((e.shiftKey ? 15 : 5) * Math.PI) / 180;
+                if (e.key === 'ArrowRight' || e.key === 'ArrowUp') turn(a.dir, step);
+                else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') turn(a.dir, -step);
+                else return;
+                e.preventDefault();
+                endMerge();
+              }}
+              data-testid={`gizmo-rot-${a.key}`}
+            >
+              <path d={d} fill="none" stroke="transparent" strokeWidth={14} />
+              <path d={d} fill="none" stroke={a.color} strokeWidth={2.5} />
+            </g>
+          );
+        })}
+        <circle cx={o.x} cy={o.y} r={4} fill="rgba(255,255,255,0.9)" stroke="rgba(0,0,0,0.5)" />
+      </svg>
+    );
+  }
+
+  // ---- scale: drag any handle away from or toward the centre ----------------
+  if (mode === 'scale') {
+    const scale = (node.params.scale as number) ?? 1;
+    const setScale = (v: number, merge = true) => {
+      setParam(sel, 'scale', Math.max(0.01, Math.round(v * 1e4) / 1e4), merge);
+      onInteract();
+    };
+    const startScale = (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const el = e.currentTarget as Element;
+      el.setPointerCapture(e.pointerId);
+      beginGesture();
+      const r = (el.closest('svg') as SVGSVGElement).getBoundingClientRect();
+      const dist = (ev: { clientX: number; clientY: number }) =>
+        Math.max(4, Math.hypot(ev.clientX - r.left - o.x, ev.clientY - r.top - o.y));
+      const d0 = dist(e);
+      const s0 = scale;
+      const move = (ev: PointerEvent) => {
+        let s = s0 * (dist(ev) / d0);
+        if (ev.ctrlKey || ev.metaKey) s = Math.round(s * 10) / 10;
+        setScale(s);
+      };
+      const up = () => {
+        el.removeEventListener('pointermove', move as EventListener);
+        el.removeEventListener('pointerup', up);
+        el.removeEventListener('pointercancel', up);
+        endMerge();
+      };
+      el.addEventListener('pointermove', move as EventListener);
+      el.addEventListener('pointerup', up);
+      el.addEventListener('pointercancel', up);
+    };
+    const onScaleKey = (e: React.KeyboardEvent) => {
+      const f = e.shiftKey ? 1.2 : 1.05;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') setScale(scale * f);
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') setScale(scale / f);
+      else return;
+      e.preventDefault();
+      endMerge();
+    };
+    return (
+      <svg className="gizmo" width={w} height={h} role="group" aria-label="Scale gizmo">
+        {AXES.map((a) => {
+          const tip = project(camera, [0, 1, 2].map((i) => pl.origin[i] + a.dir[i] * len) as Vec3, w, h);
+          if (!tip || Math.hypot(tip.x - o.x, tip.y - o.y) < 12) return null;
+          return (
+            <g key={a.key} className="handle" onPointerDown={startScale} aria-hidden="true">
+              <line x1={o.x} y1={o.y} x2={tip.x} y2={tip.y} stroke="transparent" strokeWidth={16} />
+              <line x1={o.x} y1={o.y} x2={tip.x} y2={tip.y} stroke={a.color} strokeWidth={2.5} />
+              <rect x={tip.x - 6} y={tip.y - 6} width={12} height={12} fill={a.color} rx={2} />
+            </g>
+          );
+        })}
+        <g
+          className="handle"
+          tabIndex={0}
+          role="slider"
+          aria-label="Scale"
+          aria-valuenow={scale}
+          aria-valuetext={`${Math.round(scale * 100)} percent`}
+          onPointerDown={startScale}
+          onKeyDown={onScaleKey}
+          data-testid="gizmo-scale"
+        >
+          <rect x={o.x - 9} y={o.y - 9} width={18} height={18} fill="transparent" />
+          <rect
+            x={o.x - 6}
+            y={o.y - 6}
+            width={12}
+            height={12}
+            rx={2}
+            fill="rgba(255,255,255,0.9)"
+            stroke="rgba(0,0,0,0.5)"
+            strokeWidth={1.5}
+          />
+        </g>
+      </svg>
+    );
+  }
 
   return (
     <svg className="gizmo" width={w} height={h} aria-hidden={false} role="group" aria-label="Move gizmo">
