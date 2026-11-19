@@ -330,10 +330,10 @@ export function tidy() {
 }
 
 /** Toolbar "add shape": wires the shape in and selects it. */
-export function addShape(type: string, bounds: AABB | null) {
+export function addShape(type: string, bounds: AABB | null, params?: Record<string, ParamValue>) {
   const s = get();
   const wasTidy = isTidy(s.doc);
-  const r = ops.addShapeToScene(s.doc, type, { mode: s.addMode, bounds });
+  const r = ops.addShapeToScene(s.doc, type, { mode: s.addMode, bounds, params });
   const doc = wasTidy ? applyLayout(r.doc) : r.doc;
   commit(doc, { selection: [r.nodeId] });
   set({ narrowTab: 'props' });

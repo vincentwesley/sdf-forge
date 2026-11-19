@@ -32,6 +32,7 @@ import { SCENE_THEMES, useResolvedTheme } from '../theme';
 import { raycast } from './pick';
 import { Gizmo } from './Gizmo';
 import { MeasureOverlay } from './Measure';
+import { outlineFromFile } from '../SvgField';
 import { NodeIcon } from '../meta';
 import { getDef } from '../../core/nodes/registry';
 import { Menu } from '../Menu';
@@ -114,7 +115,7 @@ export function inlineParams(glsl: string, P: Float32Array): string {
 }
 
 const QUICK_SHAPES = ['sphere', 'box', 'cylinder', 'torus', 'capsule', 'cone'];
-const MORE_SHAPES = ['profile', 'text', 'ellipsoid', 'octahedron', 'hexPrism', 'link'];
+const MORE_SHAPES = ['profile', 'svg', 'text', 'ellipsoid', 'octahedron', 'hexPrism', 'link'];
 
 const MODES: { id: ViewMode; label: string; hint: string }[] = [
   { id: 'shaded', label: 'Shaded', hint: 'Lit preview with colours' },
@@ -485,7 +486,27 @@ export function Viewport() {
     );
 
   return (
-    <section className="viewport" aria-label="3D viewport" id="viewport">
+    <section
+      className="viewport"
+      aria-label="3D viewport"
+      id="viewport"
+      onDragOver={(e) => {
+        if (e.dataTransfer.types.includes('Files')) e.preventDefault();
+      }}
+      onDrop={async (e) => {
+        const f = [...e.dataTransfer.files].find((x) => /\.svg$/i.test(x.name) || x.type === 'image/svg+xml');
+        if (!f) return;
+        e.preventDefault();
+        try {
+          const outline = await outlineFromFile(f);
+          const s = store.getState();
+          addShape('svg', getScene(s.doc, null, null).analysis.bounds, { svg: outline });
+          toast(`Imported ${f.name} as an SVG shape. Its size is under Properties.`, 'success');
+        } catch (err) {
+          toast((err as Error).message, 'error', 6000);
+        }
+      }}
+    >
       <canvas
         ref={canvasRef}
         tabIndex={0}

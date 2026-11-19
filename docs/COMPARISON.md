@@ -29,7 +29,7 @@ own way: free, in the browser, private, and printable by default.
 | Move gizmo | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Rotate / scale gizmo | ✅ | ✅ | ✅ | ✅ | ✅ | **✅ W / E / R modes; rings and scale handles** |
 | Measure / ruler | — | — | ✅ | — | ✅ | **✅ Measure tool (M): distance and X/Y/Z parts in mm** |
-| SVG import → 3D | ✅ | — | ✅ | ✅ | ✅ | Planned |
+| SVG import → 3D | ✅ | — | ✅ | ✅ | ✅ | **✅ SVG shape node: file, paste or drag-and-drop** |
 | Text | ✅ | — | ✅ | ✅ | ✅ | ✅ |
 | Draw a custom outline / lathe | ✅ | 🟡 | 🟡 | ✅ | ✅ | ✅ Profile node |
 | Repeat, mirror, twist, bend | 🟡 | ✅ | 🟡 | 🟡 | ✅ | ✅ |
@@ -37,7 +37,7 @@ own way: free, in the browser, private, and printable by default.
 | Print-readiness check | — | — | — | — | 🟡 | ✅ Print check (thin walls, overhangs) |
 | Watertight export, validated | 🟡 | 🟡 | ✅ | 🟡 | ✅ | ✅ (trimesh + lib3mf in CI) |
 | STL / OBJ / GLB / 3MF | ✅ | 🟡 | ✅ | ✅ | ✅ | ✅ |
-| USDZ (iPhone AR) | ✅ | — | — | ✅ (paid) | 🟡 | Planned |
+| USDZ (iPhone AR) | ✅ | — | — | ✅ (paid) | 🟡 | **✅ USDZ export, ARKit-checked in CI** |
 | Per-shape materials | ✅ | 🟡 | — | ✅ | ✅ | 🟡 colour per shape, one material style |
 | Path-traced render | ✅ | ✅ | — | — | ✅ | 🟡 soft shadows, AO, studio reflections |
 | Turntable video / animation | 🟡 | — | — | ✅ | 🟡 | ✅ |
@@ -66,13 +66,18 @@ own way: free, in the browser, private, and printable by default.
 * **Measure tool** (M): click two points on the surface and read the distance in mm, with its X/Y/Z parts, like
   Tinkercad's ruler or Fusion's Measure. Clicks go through a section cut, so inner walls can be measured too.
 
+* **SVG import** (Tinkercad, Womp): an *SVG shape* node turns the filled shapes of an SVG file into a flat profile
+  for badges, signs, stamps and engraving. It handles paths (arcs included), basic shapes, group transforms,
+  even-odd holes, and skips strokes, hidden elements and definitions. Import by file, paste or drag-and-drop onto
+  the 3D view. The outline is stored compactly, so share links stay small. New example: *Heart badge*.
+
+* **USDZ export** (Spline, where it's a paid feature; Womp): open the file on an iPhone or iPad to place the model in
+  your room at real size with AR Quick Look. Millimetres, Y up, one UsdPreviewSurface per shape colour. CI opens every
+  file with Pixar's USD library and runs Apple's ARKit compliance rules.
+
 ## Planned next, most valuable first
 
-1. **SVG import**: turn a logo or drawing into a profile for keychains, signs and stamps, like Tinkercad and Womp.
-   It can reuse the exact distance grid already used for Text.
-2. **USDZ export** for AR Quick Look on iPhone and iPad, like Spline and Womp. It can be validated in CI with the
-   open-source `usd-core` checker.
-3. **Per-shape material** (metal handle on a clay mug), like Womp.
+1. **Per-shape material** (metal handle on a clay mug), like Womp.
 
 ## Deliberately not planned
 

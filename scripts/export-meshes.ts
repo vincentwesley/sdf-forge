@@ -134,7 +134,7 @@ async function main() {
       sizeSource: c.size ? 'analytic' : 'sampled',
       files: {},
     };
-    for (const format of ['stl', '3mf', 'glb', 'obj'] as MeshFormat[]) {
+    for (const format of ['stl', '3mf', 'glb', 'obj', 'usdz'] as MeshFormat[]) {
       const out = await runExport(
         wasm,
         {

@@ -2,6 +2,7 @@ import type { NodeDef } from './types';
 import { sdBox } from './lib';
 import { MAX_TEXT, fontReady, textGrid } from '../text';
 import { VASE_POINTS, profilePolygon, selfIntersects } from '../profile';
+import { SAMPLE_OUTLINE, svgGrid } from '../svg';
 
 const IQ2 = 'Inigo Quilez, iquilezles.org/articles/distfunctions2d (MIT)';
 const flat = (x: number, y: number) => ({
@@ -285,3 +286,65 @@ export const profile: NodeDef = {
 };
 
 SHAPES_2D.push(profile);
+
+export const svg: NodeDef = {
+  type: 'svg',
+  label: 'SVG shape',
+  category: 'profile',
+  summary: 'Import a logo or drawing from an SVG file.',
+  help:
+    'Turns the filled shapes of an SVG file (a logo, icon or drawing from Inkscape, Illustrator, Figma…) into a flat profile. "Size" is the length of its longer side. Extrude it for a sign, badge or cookie cutter, or Subtract it to engrave or stamp. Only filled areas count; strokes are ignored, so convert strokes to paths before exporting the SVG.' +
+    PROFILE_NOTE,
+  keywords: [
+    'svg',
+    'import',
+    'logo',
+    'icon',
+    'vector',
+    'drawing',
+    'illustrator',
+    'inkscape',
+    'figma',
+    'stamp',
+    'cookie cutter',
+  ],
+  inputs: [],
+  output: 'sdf2',
+  transform: 2,
+  colored: true,
+  exactness: 'approx',
+  params: [
+    {
+      key: 'svg',
+      label: 'Drawing',
+      kind: 'text',
+      default: SAMPLE_OUTLINE,
+      maxLength: 60000,
+      structural: true,
+      ui: 'svg',
+    },
+    { key: 'size', label: 'Size', kind: 'float', unit: 'length', default: 1.6, min: 0.01, softMax: 5 },
+  ],
+  emit: ({ ir, p, value, num, texture, empty, issue }) => {
+    const grid = svgGrid(String(value('svg') ?? ''));
+    if (!grid) {
+      issue('This SVG shape has no outline yet. Import an SVG file.');
+      return empty();
+    }
+    const slot = texture(grid);
+    if (slot === null) return empty();
+    const size = num('size');
+    const g = ir.div(ir.sub(ir.div(p, size), ir.vec2(grid.x0, grid.y0)), grid.cell);
+    return { d: ir.mul(ir.tex2d(slot, g), size), col: ir.c(0) };
+  },
+  bounds: ({ params }) => {
+    const g = svgGrid(String(params.svg ?? ''));
+    if (!g) return null;
+    const s = params.size as number;
+    return { min: [g.bounds[0] * s, g.bounds[1] * s, 0], max: [g.bounds[2] * s, g.bounds[3] * s, 0] };
+  },
+  // bilinear interpolation of an exact distance grid can slightly exceed slope 1 near the medial axis
+  lipschitz: () => 1.25,
+};
+
+SHAPES_2D.push(svg);

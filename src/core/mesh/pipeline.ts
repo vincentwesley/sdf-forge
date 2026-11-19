@@ -4,8 +4,9 @@ import type { SdfDoc } from '../graph/doc';
 import { type ManifoldModule, type MeshResult, bboxOf, extractMesh, sdfNormals } from './mesh';
 import { srgbToLinear, toPrintSpace, writeGLB, writeOBJ, writeSTL } from './writers';
 import { write3MF } from './threemf';
+import { writeUSDZ } from './usdz';
 
-export type MeshFormat = 'stl' | '3mf' | 'glb' | 'obj';
+export type MeshFormat = 'stl' | '3mf' | 'glb' | 'obj' | 'usdz';
 
 export interface ExportInput {
   jsMap: string;
@@ -110,6 +111,22 @@ export async function runExport(
     });
     return { bytes, mime: 'model/3mf', ext: '3mf', stats };
   }
+  const mat = input.material;
+  const roughness = mat === 'clay' ? 0.7 : mat === 'glossy' ? 0.25 : 0.3;
+  const metallic = mat === 'metal' ? 1 : 0;
+  if (opts.format === 'usdz') {
+    // USDZ: millimetres (metersPerUnit 0.001, so AR shows true size), Y up, a material per colour
+    const pos = new Float32Array(mesh.positions.length);
+    for (let i = 0; i < pos.length; i++) pos[i] = mesh.positions[i] * mm;
+    const bytes = await writeUSDZ(pos, normals, mesh.indices, {
+      title,
+      colors: srgb,
+      palette: input.palette,
+      roughness,
+      metallic,
+    });
+    return { bytes, mime: 'model/vnd.usdz+zip', ext: 'usdz', stats };
+  }
   if (opts.format === 'obj') {
     // OBJ: millimetres, Y-up (most DCC tools import Y-up OBJ); colours in sRGB as the common extension
     const pos = new Float32Array(mesh.positions.length);
@@ -122,12 +139,11 @@ export async function runExport(
       stats,
     };
   }
-  const mat = input.material;
   const bytes = writeGLB(mesh.positions, normals, colors, mesh.indices, {
     title,
     scale: mm / 1000,
-    roughness: mat === 'clay' ? 0.7 : mat === 'glossy' ? 0.25 : 0.3,
-    metallic: mat === 'metal' ? 1 : 0,
+    roughness,
+    metallic,
   });
   return { bytes, mime: 'model/gltf-binary', ext: 'glb', stats };
 }

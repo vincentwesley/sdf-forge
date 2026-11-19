@@ -31,11 +31,14 @@ Made by **Vin** · **Vin's Atelier**.
   - **3MF** for modern slicers (Bambu Studio, PrusaSlicer, Cura) — millimetres, a colour palette taken from your
     shapes, credit metadata and a preview image, in a file about a fifth the size of the STL.
   - **GLB** (glTF 2.0) with normals and vertex colours, and **OBJ**, for Blender, game engines and the web.
+  - **USDZ** for AR on iPhone and iPad: open it to see the model in your room at real size.
   - **PNG** renders up to 4K (transparent background optional) and **turntable videos** (MP4 or WebM).
   - **Shader code** — a complete Shadertoy shader or just the GLSL distance function (not yet for shapes with text).
 - **Draw your own outlines.** The Profile node is a point editor: drag points, add them with a click, and make each
   one a sharp corner or a smooth curve. Spin it with Revolve for vases, bottles and chess pieces, or extrude it for
   brackets and plates. Works with mouse, touch and keyboard.
+- **Bring your logo.** Drop an SVG file on the 3D view (or use *Import SVG file*) to turn it into a shape to extrude,
+  stamp or engrave.
 - **Write on things.** A Text node turns any word into a profile: extrude it into a sign or name tag, or subtract
   it to engrave.
 - **Customise templates.** Pin any setting to the *Controls* panel. Printable templates (vase, planter, keychain,
@@ -108,7 +111,7 @@ and dialogs, a keyboard alternative to dragging wires), follows your light/dark 
   [Lucide](https://lucide.dev) icons (ISC), [Inter](https://rsms.me/inter/) typeface (SIL OFL 1.1),
   [Mediabunny](https://mediabunny.dev) (MPL-2.0) for video, [opentype.js](https://opentype.js.org) (MIT) for
   reading glyph outlines.
-- Testing: [Playwright](https://playwright.dev), [axe-core](https://github.com/dequelabs/axe-core), [trimesh](https://trimesh.org), [lib3mf](https://github.com/3MFConsortium/lib3mf),
+- Testing: [Playwright](https://playwright.dev), [axe-core](https://github.com/dequelabs/axe-core), [trimesh](https://trimesh.org), [lib3mf](https://github.com/3MFConsortium/lib3mf), [OpenUSD](https://openusd.org) (usd-core),
   [glTF-Validator](https://github.com/KhronosGroup/glTF-Validator), [Vitest](https://vitest.dev).
 
 ## Licence

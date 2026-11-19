@@ -81,6 +81,8 @@ def main(root: str) -> int:
     rows = []
     for case in manifest:
         for fmt, info in case["files"].items():
+            if fmt == "usdz":  # checked by validate_usdz.py with the USD library
+                continue
             path = base / info["file"]
             name = f"{case['id']}.{fmt}"
             try:

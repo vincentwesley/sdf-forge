@@ -10,6 +10,8 @@ export interface ZipEntry {
   data: Uint8Array;
   /** store small or already-compressed files (e.g. PNG) */
   store?: boolean;
+  /** start the file's data on a multiple of this many bytes (USDZ needs 64); implies store */
+  align?: number;
 }
 
 let CRC_TABLE: Uint32Array | null = null;
@@ -46,7 +48,7 @@ export async function writeZip(entries: ZipEntry[]): Promise<ArrayBuffer> {
     const crc = crc32(e.data);
     let method = 0;
     let body = e.data;
-    if (!e.store) {
+    if (!e.store && !e.align) {
       const z = await deflateRaw(e.data);
       if (z && z.length < e.data.length) {
         method = 8;
@@ -54,7 +56,14 @@ export async function writeZip(entries: ZipEntry[]): Promise<ArrayBuffer> {
       }
     }
     if (body.length > 0xfffffffe || offset > 0xfffffffe) throw new Error('File too large for ZIP');
-    const lh = new Uint8Array(30 + name.length);
+    // padding in the local header's extra field so the data starts aligned
+    let extra = 0;
+    if (e.align) {
+      const rem = (offset + 30 + name.length) % e.align;
+      extra = rem ? e.align - rem : 0;
+      if (extra > 0 && extra < 4) extra += e.align; // an extra field needs at least its 4-byte header
+    }
+    const lh = new Uint8Array(30 + name.length + extra);
     const lv = new DataView(lh.buffer);
     lv.setUint32(0, 0x04034b50, true);
     lv.setUint16(4, 20, true); // version needed
@@ -66,8 +75,12 @@ export async function writeZip(entries: ZipEntry[]): Promise<ArrayBuffer> {
     lv.setUint32(18, body.length, true);
     lv.setUint32(22, e.data.length, true);
     lv.setUint16(26, name.length, true);
-    lv.setUint16(28, 0, true);
+    lv.setUint16(28, extra, true);
     lh.set(name, 30);
+    if (extra) {
+      lv.setUint16(30 + name.length, 0x1986, true); // padding block id (as used by USD's own packager)
+      lv.setUint16(32 + name.length, extra - 4, true);
+    }
     const ch = new Uint8Array(46 + name.length);
     const cv = new DataView(ch.buffer);
     cv.setUint32(0, 0x02014b50, true);
