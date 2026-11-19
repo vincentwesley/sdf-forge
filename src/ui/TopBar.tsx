@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   Download,
   HelpCircle,
   LayoutGrid,
@@ -15,6 +16,7 @@ import { BrandMark } from './meta';
 import { CommitInput } from './fields';
 import { Menu } from './Menu';
 import { startTour } from './Tour';
+import { openGuide } from './guide';
 
 const THEMES: { id: ThemePref; label: string; icon: typeof Sun }[] = [
   { id: 'system', label: 'Match system', icon: Monitor },
@@ -108,6 +110,12 @@ export function TopBar() {
         testId="help-menu"
         items={[
           { id: 'tour', label: 'Take the 1-minute tour', onSelect: startTour },
+          {
+            id: 'guide',
+            label: 'User guide (PDF)',
+            icon: <BookOpen size={14} />,
+            onSelect: openGuide,
+          },
           {
             id: 'cmd',
             label: 'Command palette',

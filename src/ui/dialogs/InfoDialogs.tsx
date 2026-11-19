@@ -1,3 +1,4 @@
+import { GUIDE_URL } from '../guide';
 import { Modal } from './Modal';
 
 const mac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -52,7 +53,11 @@ export function AboutDialog() {
         mesher turns the result into a printable file.
       </p>
       <p className="explain">
-        Made by <strong>Vin</strong> · <strong>Vin’s Atelier</strong>. Open source under the MIT licence.
+        Made by <strong>Vin</strong> · <strong>Vin’s Atelier</strong>. Open source under the MIT licence.{' '}
+        <a href={GUIDE_URL} target="_blank" rel="noopener">
+          Read the user guide (PDF)
+        </a>
+        .
       </p>
       <h3 style={{ fontSize: 13, margin: '16px 0 6px' }}>Credits</h3>
       <ul className="explain" style={{ paddingLeft: 18, margin: 0 }}>
