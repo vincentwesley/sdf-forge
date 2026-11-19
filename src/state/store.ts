@@ -51,6 +51,10 @@ export interface EditorState {
   frameRequest: number;
   /** animated Controls are playing in the viewport */
   playing: boolean;
+  /** what the 3D gizmo does to the selected shape */
+  gizmoMode: 'move' | 'rotate' | 'scale';
+  /** measure tool: picked points (world), or null when the tool is off */
+  measure: [number, number, number][] | null;
   /** view-only section cut (null = off) */
   section: SectionState | null;
   narrowTab: NarrowTab;
@@ -105,6 +109,8 @@ export const store = createStore<EditorState>(() => ({
   camera: defaultCamera(),
   frameRequest: 0,
   playing: false,
+  gizmoMode: 'move',
+  measure: null,
   section: null,
   narrowTab: 'graph',
   dialog: null,
@@ -236,6 +242,7 @@ export function loadDoc(doc: SdfDoc, opts: { keepHistory?: boolean; rememberPrev
     frameRequest: s.frameRequest + 1,
     playing: false,
     section: null,
+    measure: null,
     restorable: opts.rememberPrevious && s.doc.nodes.length > 1 ? s.doc : null,
   });
 }

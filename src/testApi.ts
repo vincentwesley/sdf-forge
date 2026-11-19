@@ -113,6 +113,7 @@ export const testApi = {
   setCamera: (c: Partial<ReturnType<typeof store.getState>['camera']>) =>
     store.setState({ camera: { ...store.getState().camera, ...c } }),
   camera: () => store.getState().camera,
+  measure: () => store.getState().measure,
   setParam: (node: string, key: string, value: number | number[]) => {
     const s = store.getState();
     loadDocKeep({

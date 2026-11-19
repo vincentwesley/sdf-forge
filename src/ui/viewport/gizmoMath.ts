@@ -86,3 +86,51 @@ export function placementOf(doc: SdfDoc, nodeId: string): Placement | null {
 export function worldDeltaToParam(pl: Placement, delta: number[]): [number, number, number] {
   return apply(pl.worldToParam, delta);
 }
+
+/** Euler angles in degrees (R = Rz·Ry·Rx, as eulerMatrix) from a rotation matrix. */
+export function matrixToEuler(m: M3): [number, number, number] {
+  const sy = Math.max(-1, Math.min(1, -m[6]));
+  const ay = Math.asin(sy);
+  let ax: number, az: number;
+  if (Math.abs(Math.cos(ay)) > 1e-6) {
+    ax = Math.atan2(m[7], m[8]);
+    az = Math.atan2(m[3], m[0]);
+  } else {
+    // gimbal lock: put everything in X
+    az = 0;
+    ax = Math.atan2(-m[5], m[4]);
+  }
+  const deg = (r: number) => Math.round(((r * 180) / Math.PI) * 1e4) / 1e4;
+  return [deg(ax), deg(ay), deg(az)];
+}
+
+/** Rotation by `angle` radians about the unit vector `a` (Rodrigues). */
+export function axisAngle(a: number[], angle: number): M3 {
+  const [x, y, z] = a;
+  const c = Math.cos(angle),
+    s = Math.sin(angle),
+    t = 1 - c;
+  return [
+    t * x * x + c,
+    t * x * y - s * z,
+    t * x * z + s * y,
+    t * x * y + s * z,
+    t * y * y + c,
+    t * y * z - s * x,
+    t * x * z - s * y,
+    t * y * z + s * x,
+    t * z * z + c,
+  ];
+}
+
+/**
+ * New `rotation` param after turning a node by `angle` radians about a world
+ * axis: the axis is brought into the node's parent space first, so nested
+ * transforms (Transform, Revolve…) still turn the way the ring shows.
+ */
+export function rotateParam(pl: Placement, euler: number[], worldAxis: number[], angle: number): number[] {
+  const a = apply(pl.worldToParam, worldAxis);
+  const l = Math.hypot(...a) || 1;
+  const R = mul(axisAngle([a[0] / l, a[1] / l, a[2] / l], angle), eulerMatrix(euler));
+  return matrixToEuler(R);
+}

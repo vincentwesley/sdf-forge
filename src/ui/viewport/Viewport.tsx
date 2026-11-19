@@ -11,6 +11,10 @@ import {
   Scan,
   SquareSplitHorizontal,
   X,
+  Move3d,
+  Rotate3d,
+  Ruler,
+  Scaling,
 } from 'lucide-react';
 import { Renderer, type ViewMode } from '../../render/renderer';
 import {
@@ -27,6 +31,7 @@ import { hasAnimation } from '../../core/animation';
 import { SCENE_THEMES, useResolvedTheme } from '../theme';
 import { raycast } from './pick';
 import { Gizmo } from './Gizmo';
+import { MeasureOverlay } from './Measure';
 import { NodeIcon } from '../meta';
 import { getDef } from '../../core/nodes/registry';
 import { Menu } from '../Menu';
@@ -130,6 +135,9 @@ export function Viewport() {
   const grid = useEditor((s) => s.grid);
   const playing = useEditor((s) => s.playing);
   const section = useEditor((s) => s.section);
+  const measuring = useEditor((s) => s.measure !== null);
+  const gizmoMode = useEditor((s) => s.gizmoMode);
+  const hasSelection = useEditor((s) => s.selection.length > 0);
   const ortho = useEditor((s) => !!s.camera.ortho);
   const animated = useEditor((s) => hasAnimation(s.doc));
   /** time origin of the running animation */
@@ -377,6 +385,13 @@ export function Viewport() {
       scene.analysis.lipschitz,
       sectionPlane(s.section, scene.analysis.bounds),
     );
+    if (s.measure) {
+      // measure tool: clicks place points instead of selecting
+      if (t === null) return;
+      const p = [0, 1, 2].map((i) => ro[i] + rd[i] * t) as [number, number, number];
+      actions.set({ measure: s.measure.length >= 2 ? [p] : [...s.measure, p] });
+      return;
+    }
     if (t === null) {
       select([]);
       return;
@@ -485,7 +500,8 @@ export function Viewport() {
         onDoubleClick={frame}
         data-testid="viewport-canvas"
       />
-      <Gizmo canvasRef={canvasRef} onInteract={() => rendererRef.current?.interact()} />
+      {!measuring && <Gizmo canvasRef={canvasRef} onInteract={() => rendererRef.current?.interact()} />}
+      <MeasureOverlay canvasRef={canvasRef} />
 
       <div className="vp-overlay vp-tl" data-tour="add">
         <div className="toolbar" role="toolbar" aria-label="Add a shape">
@@ -628,6 +644,41 @@ export function Viewport() {
       </div>
 
       <div className="vp-overlay vp-bl">
+        <div className="toolbar" role="toolbar" aria-label="Tools">
+          {hasSelection && !measuring && (
+            <div className="segmented" role="radiogroup" aria-label="Gizmo">
+              {(
+                [
+                  ['move', 'Move', 'W', Move3d],
+                  ['rotate', 'Rotate', 'E', Rotate3d],
+                  ['scale', 'Scale', 'R', Scaling],
+                ] as const
+              ).map(([id, label, key, Icon]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={gizmoMode === id}
+                  title={`${label} (${key})`}
+                  onClick={() => actions.set({ gizmoMode: id })}
+                  data-testid={`gizmo-mode-${id}`}
+                >
+                  <Icon size={14} /> <span className="hide-sm">{label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            type="button"
+            className={`btn sm ${measuring ? 'active' : ''}`}
+            aria-pressed={measuring}
+            title="Measure the distance between two points (M)"
+            onClick={() => actions.set({ measure: measuring ? null : [] })}
+            data-testid="measure-toggle"
+          >
+            <Ruler size={14} /> <span className="hide-sm">Measure</span>
+          </button>
+        </div>
         {error && (
           <span className="hint status-pill error" role="alert">
             {error}

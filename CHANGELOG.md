@@ -6,6 +6,8 @@ All notable changes to SDF Forge are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Rotate and scale gizmo modes** (W / E / R, or the Move / Rotate / Scale buttons): drag a ring to turn the selected part about a world axis (Ctrl snaps to 15°), or drag a square to scale it. All handles work with the arrow keys.
+- **Measure tool** (M): click two points on the shape to read the distance in millimetres, with its X, Y and Z parts. It works through section cuts.
 - **Chamfered joins**: Union, Subtract and Intersect have an *Edge* choice, Rounded or Chamfered (a flat 45° bevel, Mercury hg_sdf formulas). The Shelf bracket's screw holes are now countersunk.
 - **Section view**: cut the shape open along X, Y or Z with a position slider and Flip. The cut faces are hatched like a technical drawing, picking goes through the removed half, and exports are unaffected.
 - **Camera menu**: front, back, left, right, top, bottom and ¾ views, plus orthographic (no-perspective) projection.
@@ -22,6 +24,7 @@ All notable changes to SDF Forge are documented here. The format follows
 - `docs/RESOURCES.md`: vetted list of free 3D resources (CC0 first) and licence rules for outside assets.
 
 ### Changed
+- The bottom-left of the 3D view stacks status messages above the new Tools bar, so neither covers the other.
 - A drag (slider scrub, gizmo, node move, outline point) is now always one undo step, however slowly it happens; before, pausing for over 1.2 s split it.
 - Keys handled by a widget (like Delete on an outline point) no longer also trigger the app's shortcuts.
 - CI and deploy workflows use the current major versions of the official GitHub actions (Node 24 runtime).
