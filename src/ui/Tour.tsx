@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { GUIDE_URL } from './guide';
 import { actions, useEditor } from '../state/store';
 
 interface Step {
@@ -162,6 +163,13 @@ export function WelcomeNudge() {
       <p>
         Build 3D shapes by blending simple forms, then export them for printing or games. Want a 1-minute
         tour?
+      </p>
+      <p className="muted" style={{ fontSize: 12 }}>
+        Prefer reading? Open the{' '}
+        <a href={GUIDE_URL} target="_blank" rel="noopener" data-testid="welcome-guide">
+          illustrated guide (PDF)
+        </a>
+        .
       </p>
       <div className="tour-foot">
         <span className="count" />

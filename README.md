@@ -2,7 +2,7 @@
 
 **Build 3D shapes in your browser by connecting nodes — then print them, put them in a game, or take the shader code.**
 
-**▶ Live site: <https://vincentwesley.github.io/sdf-forge/>**
+**▶ Live site: <https://vincentwesley.github.io/sdf-forge/>** · **📖 [Illustrated user guide (PDF)](https://vincentwesley.github.io/sdf-forge/guide/sdf-forge-guide.pdf)**: how to use it, and real-life uses
 
 ![Adding a shape, moving it with the gizmo, melting it in with the blend slider, then opening a printable vase template](docs/media/demo.gif)
 

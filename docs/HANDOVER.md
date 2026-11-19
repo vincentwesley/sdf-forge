@@ -56,7 +56,9 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
    for text (embed the grid as a texture channel note or const array), a WGSL/WebGPU back end from the same IR.
    Done since the first build (PRs #3–#8): 3MF export, studio reflections, the Profile (drawn outline) node,
    animated Controls. See CHANGELOG.md.
-3. Each change: `npm run acceptance` (everything) or at least lint + typecheck + unit + build, then push to the
+3. After a visible UI change, regenerate the PDF guide (`npm run build && npm run guide`) so its screenshots stay current,
+   and check the pages (`pdftoppm -r 60 -png public/guide/sdf-forge-guide.pdf /tmp/p`).
+4. Each change: `npm run acceptance` (everything) or at least lint + typecheck + unit + build, then push to the
    working branch, open a PR into `main` and merge once CI is green.
 
 ---
