@@ -1523,3 +1523,23 @@ dialog.modal::backdrop {
   padding-left: 10px;
   border-left: 2px solid var(--accent-soft);
 }
+
+/* section view controls */
+.vp-tr {
+  flex-direction: column;
+  align-items: flex-end;
+}
+.section-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow, 0 4px 14px rgb(0 0 0 / 0.2));
+}
+.section-panel input[type='range'] {
+  width: 120px;
+  accent-color: var(--accent);
+}

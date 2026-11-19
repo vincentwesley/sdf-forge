@@ -28,6 +28,18 @@ export function smin(ir: IRBuilder, a: Expr, b: Expr, k: Expr): Expr {
   return sminBlend(ir, a, b, k)[0];
 }
 
+/**
+ * Chamfered union and intersection (Mercury hg_sdf, fOpUnionChamfer /
+ * fOpIntersectionChamfer, MIT): a flat 45° bevel of size r along the seam.
+ * Returns the distance and whether A is the nearer shape (for colour).
+ */
+export function chamferMin(ir: IRBuilder, a: Expr, b: Expr, r: Expr): Expr {
+  return ir.min(ir.min(a, b), ir.mul(ir.sub(ir.add(a, b), r), Math.SQRT1_2));
+}
+export function chamferMax(ir: IRBuilder, a: Expr, b: Expr, r: Expr): Expr {
+  return ir.max(ir.max(a, b), ir.mul(ir.add(ir.add(a, b), r), Math.SQRT1_2));
+}
+
 /** smooth maximum: -smin(-a, -b) */
 export function smaxBlend(ir: IRBuilder, a: Expr, b: Expr, k: Expr): [Expr, Expr] {
   const [d, t] = sminBlend(ir, ir.neg(a), ir.neg(b), k);

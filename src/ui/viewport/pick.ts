@@ -9,6 +9,8 @@ export function raycast(
   rd: Vec3,
   bounds: AABB | null,
   lipschitz: number,
+  /** optional section plane [nx, ny, nz, offset]: only dot(p, n) <= offset is solid */
+  clip?: [number, number, number, number] | null,
 ): number | null {
   if (!bounds) return null;
   let t0 = -Infinity,
@@ -25,7 +27,12 @@ export function raycast(
   let t = Math.max(t0, 0);
   const k = 1 / Math.max(1, lipschitz);
   for (let i = 0; i < 400; i++) {
-    const d = ev.map(ro[0] + rd[0] * t, ro[1] + rd[1] * t, ro[2] + rd[2] * t) * k;
+    const x = ro[0] + rd[0] * t,
+      y = ro[1] + rd[1] * t,
+      z = ro[2] + rd[2] * t;
+    let d = ev.map(x, y, z);
+    if (clip) d = Math.max(d, x * clip[0] + y * clip[1] + z * clip[2] - clip[3]);
+    d *= k;
     if (Math.abs(d) < 1e-4 * Math.max(1, t)) return t;
     t += d;
     if (t > t1) return null;

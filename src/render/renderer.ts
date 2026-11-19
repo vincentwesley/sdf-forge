@@ -25,6 +25,8 @@ export interface FrameState {
   thinLimit: number;
   theme: SceneTheme;
   transparent?: boolean;
+  /** section plane (view only): [nx, ny, nz, offset], keeps dot(p, n) <= offset */
+  section?: [number, number, number, number] | null;
 }
 
 interface Program {
@@ -518,6 +520,9 @@ export class Renderer {
     gl.uniform3fv(this.u(p, 'uCamPos'), basis.pos);
     gl.uniformMatrix3fv(this.u(p, 'uCamRot'), false, cameraMatrix(f.camera));
     gl.uniform1f(this.u(p, 'uTanFov'), Math.tan(((f.camera.fov / 2) * Math.PI) / 180));
+    gl.uniform1f(this.u(p, 'uOrtho'), f.camera.ortho ? 1 : 0);
+    gl.uniform1f(this.u(p, 'uCamDist'), f.camera.distance);
+    gl.uniform4fv(this.u(p, 'uSection'), f.section ?? [0, 0, 0, 0]);
     const b = f.bounds ?? { min: [0, 0, 0], max: [0, 0, 0] };
     gl.uniform3fv(this.u(p, 'uBMin'), b.min);
     gl.uniform3fv(this.u(p, 'uBMax'), b.max);

@@ -6,6 +6,13 @@ export interface OrbitCamera {
   pitch: number; // radians, positive looks down
   distance: number;
   fov: number; // vertical, degrees
+  /** orthographic projection (no perspective), like a technical drawing */
+  ortho?: boolean;
+}
+
+/** Half the visible height at the target, in world units (orthographic scale). */
+export function orthoHalfHeight(c: OrbitCamera): number {
+  return c.distance * Math.tan(((c.fov / 2) * Math.PI) / 180);
 }
 
 export function defaultCamera(): OrbitCamera {
@@ -43,6 +50,15 @@ export function cameraMatrix(c: OrbitCamera): Float32Array {
 /** Ray through a point in normalised device coordinates (x right, y up, aspect-corrected like the shader). */
 export function cameraRay(c: OrbitCamera, ndcX: number, ndcY: number): { ro: Vec3; rd: Vec3 } {
   const { pos, right, up, back } = cameraBasis(c);
+  if (c.ortho) {
+    // parallel rays from a plane behind the camera position
+    const H = orthoHalfHeight(c),
+      pull = c.distance * 2;
+    const ro: Vec3 = [0, 1, 2].map(
+      (i) => pos[i] + right[i] * ndcX * H + up[i] * ndcY * H + back[i] * pull,
+    ) as Vec3;
+    return { ro, rd: [-back[0], -back[1], -back[2]] };
+  }
   const t = Math.tan(((c.fov / 2) * Math.PI) / 180);
   const dx = ndcX * t,
     dy = ndcY * t;
@@ -65,12 +81,24 @@ export function project(
   const { pos, right, up, back } = cameraBasis(c);
   const v: Vec3 = [p[0] - pos[0], p[1] - pos[1], p[2] - pos[2]];
   const z = -(v[0] * back[0] + v[1] * back[1] + v[2] * back[2]);
-  if (z <= 1e-4) return null;
-  const t = Math.tan(((c.fov / 2) * Math.PI) / 180);
-  const x = (v[0] * right[0] + v[1] * right[1] + v[2] * right[2]) / (z * t);
-  const y = (v[0] * up[0] + v[1] * up[1] + v[2] * up[2]) / (z * t);
+  if (z <= 1e-4 && !c.ortho) return null;
+  const s = c.ortho ? orthoHalfHeight(c) : z * Math.tan(((c.fov / 2) * Math.PI) / 180);
+  const x = (v[0] * right[0] + v[1] * right[1] + v[2] * right[2]) / s;
+  const y = (v[0] * up[0] + v[1] * up[1] + v[2] * up[2]) / s;
   return { x: (x * h) / 2 + w / 2, y: h / 2 - (y * h) / 2, depth: z };
 }
+
+/** Standard views: yaw/pitch for looking from each side (pitch just short of ±90° for top/bottom). */
+export const STANDARD_VIEWS = {
+  front: { yaw: 0, pitch: 0 },
+  back: { yaw: Math.PI, pitch: 0 },
+  right: { yaw: Math.PI / 2, pitch: 0 },
+  left: { yaw: -Math.PI / 2, pitch: 0 },
+  top: { yaw: 0, pitch: Math.PI / 2 - 1e-3 },
+  bottom: { yaw: 0, pitch: -Math.PI / 2 + 1e-3 },
+  iso: { yaw: 0.65, pitch: 0.42 },
+} as const;
+export type StandardView = keyof typeof STANDARD_VIEWS;
 
 /** Frame a bounding box: centre the target and choose a distance that fits it. */
 export function frameBounds(c: OrbitCamera, b: AABB | null, aspect = 1.5): OrbitCamera {

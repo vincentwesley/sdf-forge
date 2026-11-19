@@ -454,6 +454,7 @@ export const EXAMPLES: Example[] = [
         {
           points: [0, 0, 1, 1.6, 0, 1, 1.6, 0.25, 1, 0.55, 0.25, 0, 0.25, 0.55, 0, 0.25, 1.6, 1, 0, 1.6, 1],
           rounding: 0.03,
+          color: C.blue,
         },
         undefined,
         'L outline',
@@ -482,7 +483,7 @@ export const EXAMPLES: Example[] = [
         'Screw hole (wall)',
       );
       const holes = b.add('union', { smooth: 0 }, [holeV, holeH], 'Screw holes');
-      const cut = b.add('subtract', { smooth: 0.02 }, { base: ex, cutter: holes });
+      const cut = b.add('subtract', { smooth: 0.04, edge: 'chamfer' }, { base: ex, cutter: holes });
       b.output(cut)
         .pin(ex, 'height', 'Width')
         .pin(holeV, 'radius', 'Hole (floor)')
