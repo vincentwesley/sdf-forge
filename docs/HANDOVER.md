@@ -52,16 +52,29 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 ## Next session: where to pick up
 
 1. The site is live and deploys on every push to `main`. After a merge, `node scripts/check-live.mjs` confirms it.
-2. Ideas left in the brainstorm (DECISIONS.md), most valuable first: node groups / sub-graphs, Shadertoy export
-   for text (embed the grid as a texture channel note or const array), a WGSL/WebGPU back end from the same IR.
-   Done since the first build (PRs #3–#8): 3MF export, studio reflections, the Profile (drawn outline) node,
-   animated Controls. See CHANGELOG.md.
+2. Next features, most valuable first (details and reasons in `docs/COMPARISON.md` → "Planned next"):
+   per-shape materials (e.g. a metal handle on a clay mug, like Womp), node groups / sub-graphs, Shadertoy export
+   for text, a WGSL/WebGPU back end from the same IR. Deliberately not planned: mesh import, freehand sculpting,
+   path tracing (reasons in COMPARISON.md).
 3. After a visible UI change, regenerate the PDF guide (`npm run build && npm run guide`) so its screenshots stay current,
    and check the pages (`pdftoppm -r 60 -png public/guide/sdf-forge-guide.pdf /tmp/p`).
 4. Each change: `npm run acceptance` (everything) or at least lint + typecheck + unit + build, then push to the
    working branch, open a PR into `main` and merge once CI is green.
 
 ---
+
+## Session 3 (2026-11-19/20): features from other 3D tools
+
+Researched Womp, MagicaCSG, Tinkercad, Spline, Fusion 360/Shapr3D and Substance Modeler (`docs/COMPARISON.md`),
+then built the gaps through PRs #9–#13, with CI green on each, deployed and checked live.
+* **PDF user guide** (#10): `public/guide/sdf-forge-guide.pdf`, built by `npm run guide` from real screenshots.
+  It's linked from Help, the welcome card, About and the README.
+* **Chamfered joins, section view, camera menu with standard and orthographic views** (#11).
+* **Rotate/scale gizmo (W/E/R) and measure tool (M)** (#12).
+* **SVG shape node** (file, paste, drag-and-drop) and **USDZ export** for AR Quick Look (#13). USDZ is validated in
+  CI with OpenUSD (`usd-core==25.11`, the last release with the Python ARKit checker) by `scripts/validate_usdz.py`.
+* The perf test now measures the renderer (orbit driven in-page), not the Playwright input round trip (#9).
+* Totals now: 36 node types, 19 examples, 169 unit tests, 64 Playwright tests, 24 shapes × 5 formats validated.
 
 ## Session 2 (2026-11-18): added after the first build
 
