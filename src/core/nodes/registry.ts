@@ -1,3 +1,4 @@
+import { SHAPE_MATERIALS } from '../material';
 import type { Category, NodeDef, ParamDef, ParamValue } from './types';
 import { SHAPES_3D } from './shapes3d';
 import { SHAPES_2D } from './shapes2d';
@@ -70,6 +71,15 @@ export const COLOR_PARAM: ParamDef = {
   default: [0.8, 0.8, 0.8],
   group: 'look',
 };
+export const MATERIAL_PARAM: ParamDef = {
+  key: 'material',
+  label: 'Material',
+  kind: 'enum',
+  default: 'scene',
+  options: SHAPE_MATERIALS,
+  group: 'look',
+  help: 'How the surface looks: matte clay, glossy plastic, polished metal, or a glow. “Same as scene” follows the default material in the Document panel. Materials blend smoothly where shapes melt together, and GLB, USDZ and 3MF exports keep them.',
+};
 
 export const ALL_NODES: NodeDef[] = [...SHAPES_3D, ...SHAPES_2D, ...COMBINE, ...MODIFY, ...CONVERT, output];
 
@@ -84,7 +94,7 @@ export function allParams(def: NodeDef): ParamDef[] {
   const out = [...def.params];
   if (def.transform === 3) out.push(...TRANSFORM_3D);
   if (def.transform === 2) out.push(...TRANSFORM_2D);
-  if (def.colored) out.push(COLOR_PARAM);
+  if (def.colored) out.push(COLOR_PARAM, MATERIAL_PARAM);
   return out;
 }
 

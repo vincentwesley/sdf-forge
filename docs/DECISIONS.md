@@ -100,3 +100,16 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     applies the same clip, so a click goes through the removed half. Chamfered joins, by contrast, are part of the
     shape and live on the combine nodes (structural *Edge* enum). The Lipschitz estimate gets a √2 factor while a
     chamfer is active.
+22. **Per-shape materials are three numbers that travel with the colour** (vs. a material ID per shape, or a
+    material per Output). Each shape carries (roughness, metallic, glow) alongside its colour through every node, so
+    a smooth union blends materials with exactly the weight it blends colours (a metal handle melts into a clay mug),
+    sharp joins and Repeat/Mirror pick the nearer shape's, and Subtract keeps the base's unless *Colour cut with
+    cutter* is on. Presets (clay 0.65/0/0, glossy 0.16/0/0 with a clear coat derived from low roughness, metal
+    0.3/1/0, glow 0.5/0/1) keep the UI one dropdown. The numbers are uniforms derived from the Material setting and
+    the document's default, so changing a material never recompiles. `mapColor` hands them to the shader through a
+    global (`gMat`) so the tree is evaluated once per pixel. Exports group triangles by the nearest (colour,
+    material) actually set on a shape: GLB gets one primitive per group on a shared vertex array (CI rebuilds the
+    exact mesh from it rather than merging vertices), USDZ a GeomSubset with `metallic`, `roughness` and
+    `emissiveColor`, 3MF a filament named after its material. 3MF's PBR display properties
+    (`<m:pbmetallicdisplayproperties>`) were tried and dropped: lib3mf rejects them in strict mode and slicers ignore
+    them. OBJ and STL carry no materials.

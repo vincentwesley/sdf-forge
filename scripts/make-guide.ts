@@ -238,7 +238,8 @@ palette, and this guide.</div></li>
 <li><b>Move it.</b> Drag one of the coloured arrows in the 3D view (red = left/right, green = up/down, blue =
 front/back). Hold <kbd>Shift</kbd> for fine steps. Press <kbd>E</kbd> for rotation rings and <kbd>R</kbd> to scale
 (<kbd>W</kbd> goes back to moving), or type exact values in the Properties panel.</li>
-<li><b>Blend it.</b> In Properties, raise <i>Blend with the other shapes</i>. The parts melt together smoothly.</li>
+<li><b>Blend it.</b> In Properties, raise <i>Blend with the other shapes</i>: the parts melt together. <i>Material</i>
+makes a part clay, glossy, metal or glowing.</li>
 <li><b>Carve a hole.</b> Switch the toolbar from <i>Add</i> to <i>Carve</i>, then click the cylinder. It cuts through
 whatever it touches; move it like any other part.</li>
 </ol>
@@ -331,11 +332,11 @@ material, and print.</p>
 <h3>Other ways to export</h3>
 <table class="compact">
 <tr><th>Format</th><th>Use it for</th><th>Notes</th></tr>
-<tr><td><b>3MF</b></td><td>Modern slicers</td><td>Millimetres, your shapes' colours as a palette, a preview image, small files</td></tr>
+<tr><td><b>3MF</b></td><td>Modern slicers</td><td>Millimetres, your shapes' colours as named filaments, a preview image, small files</td></tr>
 <tr><td><b>STL</b></td><td>Any slicer or 3D printing service</td><td>Millimetres, Z up</td></tr>
-<tr><td><b>GLB</b> (glTF)</td><td>Game engines (Unity, Godot, Unreal), Blender, web viewers, AR</td><td>Colours and smooth normals included</td></tr>
+<tr><td><b>GLB</b> (glTF)</td><td>Game engines (Unity, Godot, Unreal), Blender, web viewers, AR</td><td>Colours, smooth normals and a material per part (metal, glossy, glow)</td></tr>
 <tr><td><b>OBJ</b></td><td>Almost any 3D app</td><td>Millimetres, vertex colours</td></tr>
-<tr><td><b>USDZ</b></td><td>AR on iPhone and iPad (open the file to place it in your room), Apple apps</td><td>Real size, colours</td></tr>
+<tr><td><b>USDZ</b></td><td>AR on iPhone and iPad (open the file to place it in your room), Apple apps</td><td>Real size, colours and materials</td></tr>
 <tr><td><b>PNG image</b></td><td>Posts, thumbnails, documents</td><td>Up to 4K, transparent background option</td></tr>
 <tr><td><b>Turntable video</b></td><td>Social media, portfolios, product pages</td><td>MP4 or WebM; can also play your animation</td></tr>
 <tr><td><b>Shader code</b></td><td>Shadertoy and graphics programming</td><td>A complete, working shader</td></tr>

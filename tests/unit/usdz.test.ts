@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { writeZip } from '../../src/core/mesh/zip';
 import { usdaLayer, writeUSDZ } from '../../src/core/mesh/usdz';
+import { type Surface, surfaceGroups } from '../../src/core/mesh/surfaces';
 import { unzip } from '../unzip';
 
 // a unit tetrahedron, outward winding, in millimetres
@@ -37,15 +38,10 @@ describe('USDZ', () => {
 
   it('writes a millimetre, Y-up layer with one material per shape colour', () => {
     const colors = new Float32Array([1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1]);
+    const surf = (color: Surface['color']): Surface => ({ color, rough: 0.65, metal: 0, glow: 0 });
     const usda = usdaLayer(pos, nrm, idx, {
       title: 'Tet "one"',
-      colors,
-      palette: [
-        [1, 0, 0],
-        [0, 0, 1],
-      ],
-      roughness: 0.7,
-      metallic: 0,
+      groups: surfaceGroups(colors, null, idx, [surf([1, 0, 0]), surf([0, 0, 1])]),
     });
     expect(usda.startsWith('#usda 1.0')).toBe(true);
     expect(usda).toContain('metersPerUnit = 0.001');
@@ -65,9 +61,7 @@ describe('USDZ', () => {
     const z = new Uint8Array(
       await writeUSDZ(pos, nrm, idx, {
         title: 't',
-        colors: new Float32Array(12).fill(0.5),
-        roughness: 0.5,
-        metallic: 0,
+        groups: surfaceGroups(new Float32Array(12).fill(0.5), null, idx, null),
       }),
     );
     expect([...unzip(z).keys()]).toEqual(['model.usda']);

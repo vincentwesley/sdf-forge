@@ -3,9 +3,14 @@
  * Millimetres, Z up, one mesh object, per-triangle colours as core
  * <basematerials> (a small palette, so slicers can map colours to filaments),
  * credit metadata, and an optional PNG thumbnail that slicers show in their
- * file browsers.
+ * file browsers. A filament is a (colour, material) pair, named after its
+ * material ("Colour 2 (metal)"). PBR display properties from the Materials
+ * extension are deliberately left out: the 3MF Consortium's own lib3mf rejects
+ * them in strict mode and slicers ignore them (DECISIONS.md 22).
  */
 import { CREDIT, SITE } from './writers';
+import { materialName } from '../material';
+import type { SurfaceGroups } from './surfaces';
 import { writeZip, type ZipEntry } from './zip';
 
 export interface ThreeMfOptions {
@@ -20,6 +25,8 @@ export interface ThreeMfOptions {
   palette?: [number, number, number][] | null;
   /** ISO date for CreationDate (defaults to today) */
   date?: string;
+  /** precomputed colour + material groups (overrides colors/palette) */
+  groups?: SurfaceGroups | null;
 }
 
 const xmlEscape = (s: string) =>
@@ -187,13 +194,20 @@ export function threeMfModel(positions: Float32Array, indices: Uint32Array, opts
     ` <metadata name="CreationDate">${date}</metadata>\n`,
     ' <resources>\n',
   );
-  let pal: ReturnType<typeof trianglePalette> | null = null;
-  if (opts.colors) {
+  let pal: { palette: [number, number, number][]; tri: Uint16Array } | null = null;
+  const g = opts.groups;
+  if (g && g.groups.length) {
+    pal = { palette: g.groups.map((s) => s.color), tri: g.tri };
+  } else if (opts.colors) {
     pal = trianglePalette(opts.colors, indices, opts.maxColors ?? 16, opts.palette);
+  }
+  if (pal) {
     parts.push('  <basematerials id="1">\n');
     pal.palette.forEach((c, i) =>
       parts.push(
-        `   <base name="Colour ${i + 1}" displaycolor="#${hex2(c[0])}${hex2(c[1])}${hex2(c[2])}"/>\n`,
+        `   <base name="${g ? materialName(g.groups[i], i) : `Colour ${i + 1}`}" displaycolor="#${hex2(c[0])}${hex2(
+          c[1],
+        )}${hex2(c[2])}"/>\n`,
       ),
     );
     parts.push('  </basematerials>\n');

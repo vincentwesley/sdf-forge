@@ -65,11 +65,17 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
     vec3 p = ro + rd * t;
     vec3 n = calcNormal(p);
     vec3 base = pow(clamp(mapColor(p).rgb, 0.0, 1.0), vec3(2.2));
+    vec3 m = gMat; // roughness, metallic, glow of this point (set by mapColor)
     vec3 L = normalize(vec3(0.6, 0.8, 0.4));
     float dif = clamp(dot(n, L), 0.0, 1.0) * softShadow(p + n * 0.002, L);
     float sky = 0.5 + 0.5 * n.y;
-    col = base * (2.0 * dif * vec3(1.0, 0.95, 0.88) + 0.35 * sky * vec3(0.55, 0.62, 0.78));
-    col += pow(clamp(dot(reflect(rd, n), L), 0.0, 1.0), 24.0) * 0.3 * dif;
+    vec3 r = reflect(rd, n);
+    col = base * (1.0 - m.y) * (2.0 * dif * vec3(1.0, 0.95, 0.88) + 0.35 * sky * vec3(0.55, 0.62, 0.78));
+    float shine = 2.0 / max(m.x * m.x, 0.01);
+    vec3 F0 = mix(vec3(0.04), base, m.y);
+    col += F0 * pow(clamp(dot(r, L), 0.0, 1.0), shine) * (shine + 2.0) * 0.12 * dif;
+    col += F0 * mix(vec3(0.07), vec3(0.6, 0.65, 0.75), 0.5 + 0.5 * r.y) * (1.0 - m.x * 0.6);
+    col = mix(col, base * 1.6, m.z * 0.85);
     col = pow(col / (1.0 + col), vec3(1.0 / 2.2));
   }
   fragColor = vec4(col, 1.0);

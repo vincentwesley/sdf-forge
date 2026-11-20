@@ -13,6 +13,7 @@ Exit code is non-zero if anything fails.
 """
 
 import json
+import struct
 import sys
 from pathlib import Path
 
@@ -52,7 +53,42 @@ def check_3mf(path: Path) -> list[str]:
     return problems
 
 
+def load_glb(path: Path) -> trimesh.Trimesh:
+    """One mesh from a GLB whose primitives (one per material) share one vertex array.
+
+    trimesh would load each primitive as a separate open shell. The writer puts
+    every primitive on the same POSITION accessor, so the exact mesh is those
+    vertices with all primitives' triangles together: no vertex merging that
+    could hide a real crack.
+    """
+    data = path.read_bytes()
+    json_len = struct.unpack_from("<I", data, 12)[0]
+    gltf = json.loads(data[20 : 20 + json_len])
+    bin_start = 20 + json_len + 8
+    prims = [p for m in gltf["meshes"] for p in m["primitives"]]
+    positions = {p["attributes"]["POSITION"] for p in prims}
+    if len(positions) != 1:
+        raise ValueError(f"primitives use {len(positions)} different vertex arrays")
+
+    def read(accessor_index: int, comps: int, dtype) -> np.ndarray:
+        acc = gltf["accessors"][accessor_index]
+        view = gltf["bufferViews"][acc["bufferView"]]
+        start = bin_start + view.get("byteOffset", 0) + acc.get("byteOffset", 0)
+        arr = np.frombuffer(data, dtype=dtype, count=acc["count"] * comps, offset=start)
+        return arr.reshape(-1, comps)
+
+    verts = read(positions.pop(), 3, np.float32).astype(np.float64)
+    faces = np.concatenate([read(p["indices"], 1, np.uint32).reshape(-1, 3) for p in prims])
+    # the reference loader must agree on the triangle count
+    ref = trimesh.load(path, force="mesh", process=False)
+    if len(ref.faces) != len(faces):
+        raise ValueError(f"trimesh reads {len(ref.faces)} faces, the file has {len(faces)}")
+    return trimesh.Trimesh(verts, faces, process=True)
+
+
 def load(path: Path) -> trimesh.Trimesh:
+    if path.suffix == ".glb":
+        return load_glb(path)
     m = trimesh.load(path, force="mesh", process=True)
     if not isinstance(m, trimesh.Trimesh):
         raise ValueError(f"{path.name}: did not load as a single mesh")

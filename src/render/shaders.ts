@@ -32,7 +32,6 @@ uniform vec3 uBMax;
 uniform float uStepScale;
 uniform int uMaxSteps;
 uniform int uMode;        // 0 shaded, 1 normals, 2 print check, 3 cost
-uniform int uMaterial;    // 0 clay, 1 glossy, 2 metal
 uniform int uEmpty;
 uniform float uSelOn;
 uniform vec3 uSelColor;
@@ -192,8 +191,12 @@ vec3 shade(vec3 p, vec3 rd, float t) {
     base = mix(base * 0.35, mix(base, vec3(0.9, 0.3, 0.2), 0.45), stripe);
   }
 
-  float rough = uMaterial == 0 ? 0.65 : (uMaterial == 1 ? 0.16 : 0.3);
-  float metal = uMaterial == 2 ? 1.0 : 0.0;
+  // per-shape material from mapColor (blended across smooth unions)
+  float rough = clamp(gMat.x, 0.02, 1.0);
+  float metal = clamp(gMat.y, 0.0, 1.0);
+  float glow = clamp(gMat.z, 0.0, 1.0);
+  // glossy plastics get a clear coat; clay and metal don't (see src/core/material.ts)
+  float coat = (1.0 - metal) * clamp((0.4 - rough) / 0.24, 0.0, 1.0);
   vec3 L = normalize(uKeyDir);
   vec3 H = normalize(L - rd);
   float ndl = clamp(dot(n, L), 0.0, 1.0);
@@ -212,6 +215,8 @@ vec3 shade(vec3 p, vec3 rd, float t) {
     base = mix(base, vec3(0.9, 0.08, 0.06), thin);
     metal = 0.0;
     rough = 0.7;
+    glow = 0.0;
+    coat = 0.0;
   }
 
   // GGX-ish specular with Schlick fresnel
@@ -247,10 +252,15 @@ vec3 shade(vec3 p, vec3 rd, float t) {
     vec3 env = mix(uBgBottom, uBgTop, clamp(r.y * 0.5 + 0.5, 0.0, 1.0)) * 1.4 + vec3(smoothstep(0.6, 0.95, r.y)) * 0.6;
     col += env * F * ao * (1.0 - rough) * 0.9;
   }
-  if (uMaterial == 1) {
+  if (coat > 0.0) {
     // glossy: a clear-coat style sharp highlight of the key light
     float cc = pow(ndh, 220.0) * 6.0 * sh;
-    col += vec3(cc) * (0.04 + 0.96 * pow(1.0 - ndv, 5.0) + 0.3);
+    col += vec3(cc) * (0.04 + 0.96 * pow(1.0 - ndv, 5.0) + 0.3) * coat;
+  }
+  if (glow > 0.0) {
+    // glow: the surface gives off its own colour, brightest where it faces the camera
+    vec3 emit = base * (1.5 + 0.6 * ndv) + 0.08;
+    col = mix(col, emit, glow * 0.85);
   }
 
   if (uSelOn > 0.5) {

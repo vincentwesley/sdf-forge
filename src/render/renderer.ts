@@ -4,7 +4,6 @@ import type { AABB } from '../core/nodes/types';
 import type { TextGrid } from '../core/text';
 
 export type ViewMode = 'shaded' | 'normals' | 'print' | 'cost';
-export type MaterialStyle = 'clay' | 'glossy' | 'metal';
 
 export interface SceneTheme {
   bgTop: [number, number, number];
@@ -18,7 +17,6 @@ export interface FrameState {
   bounds: AABB | null;
   lipschitz: number;
   mode: ViewMode;
-  material: MaterialStyle;
   selectionOn: boolean;
   grid: boolean;
   gridStep: number;
@@ -40,7 +38,6 @@ interface Program {
 }
 
 const MODE_ID: Record<ViewMode, number> = { shaded: 0, normals: 1, print: 2, cost: 3 };
-const MAT_ID: Record<MaterialStyle, number> = { clay: 0, glossy: 1, metal: 2 };
 
 /** Halton sequence for sub-pixel jitter. */
 function halton(i: number, b: number) {
@@ -532,7 +529,6 @@ export class Renderer {
     );
     gl.uniform1i(this.u(p, 'uMaxSteps'), steps);
     gl.uniform1i(this.u(p, 'uMode'), MODE_ID[f.mode]);
-    gl.uniform1i(this.u(p, 'uMaterial'), MAT_ID[f.material]);
     gl.uniform1i(this.u(p, 'uEmpty'), this.emptyScene || !f.bounds ? 1 : 0);
     gl.uniform1f(this.u(p, 'uSelOn'), f.selectionOn ? 1 : 0);
     gl.uniform3fv(this.u(p, 'uSelColor'), f.theme.selection);

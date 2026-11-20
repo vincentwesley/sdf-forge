@@ -3,6 +3,8 @@
  * credit in their metadata.
  */
 import { bboxOf } from './mesh';
+import { exportRoughness, materialName } from '../material';
+import type { SurfaceGroups } from './surfaces';
 
 export const CREDIT = "SDF Forge by Vin's Atelier";
 export const SITE = 'https://vincentwesley.github.io/sdf-forge/';
@@ -107,6 +109,8 @@ export interface GlbOptions {
   scale: number;
   roughness: number;
   metallic: number;
+  /** one primitive + material per colour/material group (vertex colours still carry blends) */
+  groups?: SurfaceGroups | null;
 }
 
 /** glTF 2.0 binary with positions, normals, linear vertex colours and indices. Y-up, metres. */
@@ -136,7 +140,21 @@ export function writeGLB(
   const vPos = push(pos, 34962);
   const vNrm = push(normals, 34962);
   const vCol = colors ? push(colors, 34962) : -1;
-  const vIdx = push(indices, 34963);
+  // one index list per surface group; all primitives share the vertex arrays
+  const g = opts.groups && opts.groups.groups.length ? opts.groups : null;
+  const lists: Uint32Array[] = [];
+  if (g) {
+    const counts = new Array<number>(g.groups.length).fill(0);
+    for (let t = 0; t < g.tri.length; t++) counts[g.tri[t]]++;
+    const fill = counts.map(() => 0);
+    counts.forEach((n) => lists.push(new Uint32Array(n * 3)));
+    for (let t = 0; t < g.tri.length; t++) {
+      const k = g.tri[t];
+      lists[k].set(indices.subarray(t * 3, t * 3 + 3), fill[k]);
+      fill[k] += 3;
+    }
+  } else lists.push(indices);
+  const vIdx = lists.map((l) => push(l, 34963));
   const accessors: Record<string, unknown>[] = [
     { bufferView: vPos, componentType: 5126, count: nv, type: 'VEC3', min: b.min, max: b.max },
     { bufferView: vNrm, componentType: 5126, count: nv, type: 'VEC3' },
@@ -146,7 +164,34 @@ export function writeGLB(
     accessors.push({ bufferView: vCol, componentType: 5126, count: nv, type: 'VEC3' });
     attributes.COLOR_0 = accessors.length - 1;
   }
-  accessors.push({ bufferView: vIdx, componentType: 5125, count: indices.length, type: 'SCALAR' });
+  const primitives = lists.map((l, k) => {
+    accessors.push({ bufferView: vIdx[k], componentType: 5125, count: l.length, type: 'SCALAR' });
+    return { attributes, indices: accessors.length - 1, material: k, mode: 4 };
+  });
+  const materials = g
+    ? g.groups.map((s, i) => {
+        const lin = s.color.map(srgbToLinear);
+        return {
+          name: materialName(s, i),
+          pbrMetallicRoughness: {
+            // the vertex colours (COLOR_0) carry the colour, including smooth blends
+            baseColorFactor: [1, 1, 1, 1],
+            metallicFactor: +s.metal.toFixed(3),
+            roughnessFactor: +exportRoughness(s.rough).toFixed(3),
+          },
+          ...(s.glow > 1e-3 ? { emissiveFactor: lin.map((v) => +(v * s.glow).toFixed(4)) } : {}),
+        };
+      })
+    : [
+        {
+          name: 'SDF Forge material',
+          pbrMetallicRoughness: {
+            baseColorFactor: [1, 1, 1, 1],
+            metallicFactor: opts.metallic,
+            roughnessFactor: opts.roughness,
+          },
+        },
+      ];
   const gltf = {
     asset: {
       version: '2.0',
@@ -156,19 +201,8 @@ export function writeGLB(
     scene: 0,
     scenes: [{ name: opts.title, nodes: [0] }],
     nodes: [{ name: opts.title, mesh: 0 }],
-    meshes: [
-      { name: opts.title, primitives: [{ attributes, indices: accessors.length - 1, material: 0, mode: 4 }] },
-    ],
-    materials: [
-      {
-        name: 'SDF Forge material',
-        pbrMetallicRoughness: {
-          baseColorFactor: [1, 1, 1, 1],
-          metallicFactor: opts.metallic,
-          roughnessFactor: opts.roughness,
-        },
-      },
-    ],
+    meshes: [{ name: opts.title, primitives }],
+    materials,
     accessors,
     bufferViews: views.map((v) => ({ buffer: 0, ...v })),
     buffers: [{ byteLength: offset }],

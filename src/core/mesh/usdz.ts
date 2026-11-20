@@ -4,22 +4,20 @@
  * A .usdz is an uncompressed ZIP whose first file is the USD layer and whose
  * file data starts on 64-byte boundaries. The layer is plain text (.usda):
  * one mesh in millimetres (metersPerUnit = 0.001, so AR shows it at real size),
- * Y up, smooth normals, and one UsdPreviewSurface material per colour of the
- * shapes, bound to GeomSubsets of faces. Quick Look honours materials but not
- * vertex colours, so colours are grouped the same way as in 3MF.
+ * Y up, smooth normals, and one UsdPreviewSurface material per colour and
+ * material of the shapes (clay, glossy, metal, glow), bound to GeomSubsets of
+ * faces. Quick Look honours materials but not vertex colours, so surfaces are
+ * grouped the same way as in 3MF (src/core/mesh/surfaces.ts).
  */
 import { CREDIT, SITE } from './writers';
-import { trianglePalette } from './threemf';
+import { exportRoughness } from '../material';
+import type { SurfaceGroups } from './surfaces';
 import { writeZip } from './zip';
 
 export interface UsdzOptions {
   title: string;
-  /** per-vertex sRGB colours 0..1 */
-  colors: Float32Array;
-  /** the shapes' own colours (sRGB) to snap to */
-  palette?: [number, number, number][] | null;
-  roughness: number;
-  metallic: number;
+  /** colour + material per triangle */
+  groups: SurfaceGroups;
 }
 
 /** compact number: 3 decimals (1 µm for millimetre positions), no trailing zeros */
@@ -39,7 +37,7 @@ export function usdaLayer(
   opts: UsdzOptions,
 ): string {
   const nt = indices.length / 3;
-  const pal = trianglePalette(opts.colors, indices, 16, opts.palette);
+  const pal = opts.groups;
   let lo = [Infinity, Infinity, Infinity],
     hi = [-Infinity, -Infinity, -Infinity];
   const pts: string[] = [];
@@ -53,7 +51,7 @@ export function usdaLayer(
     nrm.push(`(${f(normals[i])},${f(normals[i + 1])},${f(normals[i + 2])})`);
   const subsets: string[] = [];
   const materials: string[] = [];
-  pal.palette.forEach((c, k) => {
+  pal.groups.forEach((s, k) => {
     const faces: number[] = [];
     for (let t = 0; t < nt; t++) if (pal.tri[t] === k) faces.push(t);
     const name = `Colour${k + 1}`;
@@ -67,7 +65,8 @@ export function usdaLayer(
             int[] indices = [${faces.join(',')}]
             rel material:binding = </Root/Materials/${name}>
         }`);
-    const lin = c.map(toLinear);
+    const lin = s.color.map(toLinear);
+    const glow = s.glow > 1e-3 ? lin.map((v) => v * s.glow) : null;
     materials.push(`
         def Material "${name}"
         {
@@ -77,8 +76,10 @@ export function usdaLayer(
             {
                 uniform token info:id = "UsdPreviewSurface"
                 color3f inputs:diffuseColor = (${f(lin[0])}, ${f(lin[1])}, ${f(lin[2])})
-                float inputs:roughness = ${f(opts.roughness)}
-                float inputs:metallic = ${f(opts.metallic)}
+                float inputs:roughness = ${f(exportRoughness(s.rough))}
+                float inputs:metallic = ${f(s.metal)}${
+                  glow ? `\n                color3f inputs:emissiveColor = (${glow.map(f).join(', ')})` : ''
+                }
                 token outputs:surface
             }
         }`);

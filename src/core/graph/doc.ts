@@ -1,3 +1,4 @@
+import type { MaterialStyle } from '../material';
 import { defaultParams, getDef, paramsOf } from '../nodes/registry';
 import { sanitizePoints } from '../profile';
 import { isAnimatable, sanitizeAnim } from '../animation';
@@ -30,7 +31,7 @@ export interface Pinned {
   anim?: import('../animation').PinAnim;
 }
 
-export type MaterialStyle = 'clay' | 'glossy' | 'metal';
+export type { MaterialStyle } from '../material';
 
 export interface DocSettings {
   /** millimetres per scene unit (used for display and STL export) */

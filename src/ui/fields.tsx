@@ -326,6 +326,29 @@ export function ColorField({ def, value, onChange, onCommit, pinned, onTogglePin
 export function EnumField({ def, value, onChange, onCommit, pinned, onTogglePin, label }: FieldProps) {
   if (def.kind !== 'enum') return null;
   const name = label ?? def.label;
+  if (def.options.length > 4)
+    // too many choices for a row of buttons in a narrow panel
+    return (
+      <div className="field" title={def.help}>
+        <span className="field-label">{name}</span>
+        <select
+          className="select"
+          aria-label={name}
+          value={String(value)}
+          onChange={(e) => {
+            onChange(e.target.value);
+            onCommit();
+          }}
+        >
+          {def.options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <PinButton pinned={pinned} onToggle={onTogglePin} label={name} />
+      </div>
+    );
   return (
     <div className="field" title={def.help}>
       <span className="field-label" id={`${def.key}-lbl`}>

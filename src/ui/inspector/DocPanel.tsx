@@ -163,8 +163,8 @@ export function DocPanel() {
       </div>
 
       <div className="insp-section">
-        <h3>Material</h3>
-        <div className="segmented" role="radiogroup" aria-label="Material">
+        <h3>Default material</h3>
+        <div className="segmented" role="radiogroup" aria-label="Default material">
           {(['clay', 'glossy', 'metal'] as MaterialStyle[]).map((m) => (
             <button
               key={m}
@@ -177,6 +177,10 @@ export function DocPanel() {
             </button>
           ))}
         </div>
+        <p className="explain" style={{ marginTop: 8 }}>
+          Used by every shape whose material is “Same as scene”. Select a shape to give it its own: clay,
+          glossy, metal or glow.
+        </p>
       </div>
 
       <div className="insp-section">

@@ -11,7 +11,7 @@ export function gpuEvaluate(
   P: Float32Array,
   points: Float32Array, // xyz triples
   textures: { data: Float32Array; w: number; h: number }[] = [],
-): { d: Float32Array; color: Float32Array } {
+): { d: Float32Array; color: Float32Array; mat: Float32Array } {
   const n = points.length / 3;
   const W = Math.min(256, n);
   const H = Math.ceil(n / W);
@@ -27,12 +27,14 @@ uniform vec4 uP[${vec4s}];
 uniform sampler2D uPts;
 layout(location = 0) out vec4 outD;
 layout(location = 1) out vec4 outC;
+layout(location = 2) out vec4 outM;
 ${sceneGlsl}
 void main() {
   ivec2 c = ivec2(gl_FragCoord.xy);
   vec3 p = texelFetch(uPts, c, 0).xyz;
   outD = vec4(map(p), 0.0, 0.0, 1.0);
   outC = mapColor(p);
+  outM = vec4(gMat, 1.0);
 }`;
   const mk = (type: number, src: string) => {
     const s = gl.createShader(type)!;
@@ -70,7 +72,7 @@ void main() {
   padded.set(P.subarray(0, padded.length));
   gl.uniform4fv(gl.getUniformLocation(prog, 'uP[0]'), padded);
 
-  const targets = [0, 1].map(() => {
+  const targets = [0, 1, 2].map(() => {
     const t = gl.createTexture()!;
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, W, H, 0, gl.RGBA, gl.FLOAT, null);
@@ -80,7 +82,8 @@ void main() {
   gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, targets[0], 0);
   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT1, gl.TEXTURE_2D, targets[1], 0);
-  gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1]);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT2, gl.TEXTURE_2D, targets[2], 0);
+  gl.drawBuffers([gl.COLOR_ATTACHMENT0, gl.COLOR_ATTACHMENT1, gl.COLOR_ATTACHMENT2]);
   gl.viewport(0, 0, W, H);
   // the render targets were bound to unit 0 while being created; rebind the points
   gl.activeTexture(gl.TEXTURE0);
@@ -105,12 +108,15 @@ void main() {
   };
   const rawD = read(gl.COLOR_ATTACHMENT0);
   const rawC = read(gl.COLOR_ATTACHMENT1);
+  const rawM = read(gl.COLOR_ATTACHMENT2);
   const d = new Float32Array(n);
   const color = new Float32Array(n * 3);
+  const mat = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) {
     d[i] = rawD[i * 4];
     color.set(rawC.subarray(i * 4, i * 4 + 3), i * 3);
+    mat.set(rawM.subarray(i * 4, i * 4 + 3), i * 3);
   }
   gl.getExtension('WEBGL_lose_context')?.loseContext();
-  return { d, color };
+  return { d, color, mat };
 }

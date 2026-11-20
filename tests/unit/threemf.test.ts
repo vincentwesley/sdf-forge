@@ -4,7 +4,7 @@ import { crc32, writeZip } from '../../src/core/mesh/zip';
 import { trianglePalette, write3MF } from '../../src/core/mesh/threemf';
 import { analyze, compile, packParams } from '../../src/core/compile';
 import { DocBuilder } from '../../src/gallery/builder';
-import { runExport, shapeColors } from '../../src/core/mesh/pipeline';
+import { runExport, shapeSurfaces } from '../../src/core/mesh/pipeline';
 import type { ManifoldModule } from '../../src/core/mesh/mesh';
 import { unzip } from '../unzip';
 
@@ -98,7 +98,7 @@ describe('3MF', () => {
         title: 'two',
         mmPerUnit: 10,
         material: 'clay',
-        palette: shapeColors(doc, comp.leaves),
+        surfaces: shapeSurfaces(doc, comp.leaves),
       },
       { format: '3mf', edgeLength: 0.08 },
     );

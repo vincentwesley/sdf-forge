@@ -20,6 +20,7 @@ const IDS = [
   'pawn',
   'bracket',
   'heart-badge',
+  'lamp',
   'gem',
 ];
 

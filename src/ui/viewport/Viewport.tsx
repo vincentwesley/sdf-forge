@@ -235,7 +235,6 @@ export function Viewport() {
       bounds: analysis.bounds,
       lipschitz: analysis.lipschitz,
       mode: s.viewMode,
-      material: s.doc.settings.material,
       selectionOn: s.selection.length > 0 && !!scene.compiled.nodeIndex[s.selection[0]],
       grid: s.grid,
       gridStep: 10 / s.doc.settings.mmPerUnit,

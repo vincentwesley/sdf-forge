@@ -18,7 +18,7 @@ export const sphere: NodeDef = {
   params: [
     { key: 'radius', label: 'Radius', kind: 'float', unit: 'length', default: 1, min: 0.001, softMax: 3 },
   ],
-  emit: ({ ir, p, num }) => ({ d: ir.sub(ir.length(p), num('radius')), col: ir.c(0) }),
+  emit: ({ ir, p, num }) => ({ d: ir.sub(ir.length(p), num('radius')), col: ir.c(0), mat: ir.c(0) }),
   bounds: ({ params }) => {
     const r = params.radius as number;
     return symBox(r, r, r);
@@ -55,7 +55,11 @@ export const box: NodeDef = {
     const r = Math.min(pr.rounding as number, s[0] / 2, s[1] / 2, s[2] / 2);
     return { half: s.map((v) => v / 2 - r), r };
   },
-  emit: ({ ir, p, derived }) => ({ d: ir.sub(sdBox(ir, p, derived('half')), derived('r')), col: ir.c(0) }),
+  emit: ({ ir, p, derived }) => ({
+    d: ir.sub(sdBox(ir, p, derived('half')), derived('r')),
+    col: ir.c(0),
+    mat: ir.c(0),
+  }),
   bounds: ({ params }) => {
     const s = params.size as number[];
     return symBox(s[0] / 2, s[1] / 2, s[2] / 2);
@@ -89,7 +93,7 @@ export const torus: NodeDef = {
   ],
   emit: ({ ir, p, num }) => {
     const q = ir.vec2(ir.sub(ir.length(ir.sw(p, 'xz')), num('major')), ir.y(p));
-    return { d: ir.sub(ir.length(q), num('minor')), col: ir.c(0) };
+    return { d: ir.sub(ir.length(q), num('minor')), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const R = params.major as number,
@@ -136,7 +140,7 @@ export const cylinder: NodeDef = {
       ir.sub(ir.abs(ir.y(p)), derived('ha')),
     );
     const d = ir.add(ir.min(ir.maxComp(d2), 0), ir.length(ir.max(d2, 0)));
-    return { d: ir.sub(d, derived('rr')), col: ir.c(0) };
+    return { d: ir.sub(d, derived('rr')), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const r = params.radius as number,
@@ -166,7 +170,7 @@ export const capsule: NodeDef = {
   emit: ({ ir, p, num, derived }) => {
     const hs = derived('hs');
     const y = ir.sub(ir.y(p), ir.clamp(ir.y(p), ir.neg(hs), hs));
-    return { d: ir.sub(ir.length(ir.vec3(ir.x(p), y, ir.z(p))), num('radius')), col: ir.c(0) };
+    return { d: ir.sub(ir.length(ir.vec3(ir.x(p), y, ir.z(p))), num('radius')), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const r = params.radius as number;
@@ -216,7 +220,7 @@ export const cone: NodeDef = {
     const cb = ir.add(ir.sub(q, k1), ir.mul(k2, t));
     const inside = ir.and(ir.lt(ir.x(cb), 0), ir.lt(ir.y(ca), 0));
     const s = ir.select(inside, -1, 1);
-    return { d: ir.mul(s, ir.sqrt(ir.min(ir.dot2(ca), ir.dot2(cb)))), col: ir.c(0) };
+    return { d: ir.mul(s, ir.sqrt(ir.min(ir.dot2(ca), ir.dot2(cb)))), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const r = Math.max(params.bottom as number, params.top as number);
@@ -255,7 +259,7 @@ export const ellipsoid: NodeDef = {
     const k1 = ir.max(k1raw, 1e-9);
     // the formula is 0/0 at the exact centre; use the smallest radius there
     const d = ir.select(ir.lt(k1raw, 1e-6), ir.neg(ir.minComp(r)), ir.div(ir.mul(k0, ir.sub(k0, 1)), k1));
-    return { d, col: ir.c(0) };
+    return { d, col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const r = params.radii as number[];
@@ -295,7 +299,7 @@ export const octahedron: NodeDef = {
     const exact = ir.length(ir.vec3(ir.x(q), ir.add(ir.sub(ir.y(q), s), k), ir.sub(ir.z(q), k)));
     const any = ir.select(cx, 1, ir.select(cy, 1, ir.select(cz, 1, 0)));
     const d = ir.select(ir.gt(any, 0.5), exact, ir.mul(m, 0.57735027));
-    return { d, col: ir.c(0) };
+    return { d, col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const s = params.size as number;
@@ -334,7 +338,7 @@ export const hexPrism: NodeDef = {
     const lim = ir.mul(hx, kz);
     const e = ir.sub(xy, ir.vec2(ir.clamp(ir.x(xy), ir.neg(lim), lim), hx));
     const d = ir.vec2(ir.mul(ir.length(e), ir.sign(ir.sub(ir.y(xy), hx))), ir.sub(ir.z(a), hy));
-    return { d: ir.add(ir.min(ir.maxComp(d), 0), ir.length(ir.max(d, 0))), col: ir.c(0) };
+    return { d: ir.add(ir.min(ir.maxComp(d), 0), ir.length(ir.max(d, 0))), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const r = (params.radius as number) / 0.8660254;
@@ -388,7 +392,7 @@ export const link: NodeDef = {
     const le = ir.mul(num('length'), 0.5);
     const q = ir.vec3(ir.x(p), ir.max(ir.sub(ir.abs(ir.y(p)), le), 0), ir.z(p));
     const v = ir.vec2(ir.sub(ir.length(ir.sw(q, 'xy')), num('radius')), ir.z(q));
-    return { d: ir.sub(ir.length(v), num('thickness')), col: ir.c(0) };
+    return { d: ir.sub(ir.length(v), num('thickness')), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const le = (params.length as number) / 2,

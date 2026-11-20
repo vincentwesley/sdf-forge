@@ -1,5 +1,5 @@
 import type { Expr, IRBuilder } from '../ir/ir';
-import type { AABB } from './types';
+import type { AABB, ShapeVal } from './types';
 
 /**
  * Shared SDF building blocks, written in the IR.
@@ -160,4 +160,14 @@ export function eulerMatrix(deg: number[]): number[] {
 }
 export function transpose3(m: number[]): number[] {
   return [m[0], m[3], m[6], m[1], m[4], m[7], m[2], m[5], m[8]];
+}
+
+/** The surface (colour and material) of A where `aWins`, else B's. */
+export function pickSurface(ir: IRBuilder, aWins: Expr, a: ShapeVal, b: ShapeVal, d: Expr): ShapeVal {
+  return { d, col: ir.select(aWins, a.col, b.col), mat: ir.select(aWins, a.mat, b.mat) };
+}
+
+/** Blend two surfaces (colour and material) by t (0 = A, 1 = B), as in a smooth blend. */
+export function mixSurface(ir: IRBuilder, a: ShapeVal, b: ShapeVal, t: Expr, d: Expr): ShapeVal {
+  return { d, col: ir.mix(a.col, b.col, t), mat: ir.mix(a.mat, b.mat, t) };
 }
