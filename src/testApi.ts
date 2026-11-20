@@ -12,7 +12,7 @@ import { commit, loadDoc, store } from './state/store';
 const loadDocKeep = (d: SdfDoc) => commit(d);
 import { encodeDoc, decodeDoc } from './core/share';
 import { exportMesh } from './workers/meshClient';
-import { shapeColors, type MeshFormat } from './core/mesh/pipeline';
+import { shapeSurfaces, type MeshFormat } from './core/mesh/pipeline';
 import { shadertoySource } from './core/shadertoy';
 import { getScene } from './state/scene';
 
@@ -96,17 +96,21 @@ export const testApi = {
     const ev = makeEvaluator(c, P);
     const cpu: number[] = [];
     const cpuColor: number[] = [];
-    const out = [0, 0, 0];
+    const cpuMat: number[] = [];
+    const out = [0, 0, 0, 0, 0, 0];
     for (let i = 0; i < pts.length; i += 3) {
       cpu.push(ev.map(pts[i], pts[i + 1], pts[i + 2]));
       ev.color(pts[i], pts[i + 1], pts[i + 2], out);
-      cpuColor.push(...out);
+      cpuColor.push(out[0], out[1], out[2]);
+      cpuMat.push(out[3], out[4], out[5]);
     }
     return {
       gpu: [...gpu.d],
       cpu,
       gpuColor: [...gpu.color],
       cpuColor,
+      gpuMat: [...gpu.mat],
+      cpuMat,
       bounds: sceneFor(normalizeDoc(doc)).a.bounds,
     };
   },
@@ -141,7 +145,7 @@ export const testApi = {
         mmPerUnit: s.doc.settings.mmPerUnit,
         material: s.doc.settings.material,
         textures: c.textures,
-        palette: shapeColors(s.doc, c.leaves),
+        surfaces: shapeSurfaces(s.doc, c.leaves),
       },
       { format, edgeLength: ext / cells },
     );

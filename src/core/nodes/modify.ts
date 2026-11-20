@@ -1,6 +1,6 @@
 import type { AABB, NodeDef, ParamValue } from './types';
 import type { Expr } from '../ir/ir';
-import { expand, maxRadius, maxRadiusXZ, rot2 } from './lib';
+import { expand, maxRadius, maxRadiusXZ, pickSurface, rot2 } from './lib';
 import { NOISE_LIPSCHITZ } from '../ir/noise';
 
 const IQ = 'Inigo Quilez, iquilezles.org/articles/distfunctions (MIT)';
@@ -179,7 +179,7 @@ export const repeat: NodeDef = {
     const results = cells.map((cc) => ir.sub(p, ir.mul(derived('s'), ir.sub(cc, derived('off')))));
     const shapes = results.map((q) => inputs('shape', q)[0]).filter(Boolean);
     if (!shapes.length) return empty();
-    return shapes.reduce((a, b) => ({ d: ir.min(a.d, b.d), col: ir.select(ir.lt(a.d, b.d), a.col, b.col) }));
+    return shapes.reduce((a, b) => pickSurface(ir, ir.lt(a.d, b.d), a, b, ir.min(a.d, b.d)));
   },
   bounds: ({ input, params }) => {
     const b = input('shape');
@@ -223,7 +223,7 @@ export const radial: NodeDef = {
     if (!s1) return empty();
     if ((value('count') as number) <= 1) return s1;
     const s2 = at(a2);
-    return { d: ir.min(s1.d, s2.d), col: ir.select(ir.lt(s1.d, s2.d), s1.col, s2.col) };
+    return pickSurface(ir, ir.lt(s1.d, s2.d), s1, s2, ir.min(s1.d, s2.d));
   },
   bounds: ({ input }) => {
     const b = input('shape');
@@ -387,7 +387,7 @@ export const shell: NodeDef = {
     let d = ir.sub(ir.abs(ir.add(s.d, derived('off'))), derived('half'));
     if (value('open') === 'top' && p.ty === 'v3') d = ir.max(d, ir.sub(ir.y(p), derived('top')));
     if (value('open') === 'bottom' && p.ty === 'v3') d = ir.max(d, ir.sub(derived('bottom'), ir.y(p)));
-    return { d, col: s.col };
+    return { d, col: s.col, mat: s.mat };
   },
   bounds: ({ input, params }) => {
     const t = params.thickness as number;
@@ -420,7 +420,7 @@ export const round: NodeDef = {
   emit: ({ ir, input, num, empty }) => {
     const s = input('shape');
     if (!s) return empty();
-    return { d: ir.sub(s.d, num('amount')), col: s.col };
+    return { d: ir.sub(s.d, num('amount')), col: s.col, mat: s.mat };
   },
   bounds: ({ input, params }) => expand(input('shape'), Math.max(params.amount as number, 0)),
   credit: IQ,
@@ -533,7 +533,7 @@ export const displace: NodeDef = {
       }
       n = ir.mul(sum, derived('ampN'));
     }
-    return { d: ir.add(s.d, n), col: s.col };
+    return { d: ir.add(s.d, n), col: s.col, mat: s.mat };
   },
   bounds: ({ input, params }) => expand(input('shape'), Math.abs(params.amount as number)),
   lipschitz: ({ input, params }) => input('shape') + fbmLipschitz(params),
@@ -611,7 +611,7 @@ export const lattice: NodeDef = {
       const skin = ir.max(s.d, ir.neg(ir.add(s.d, num('skin'))));
       d = ir.min(d, skin);
     }
-    return { d, col: s.col };
+    return { d, col: s.col, mat: s.mat };
   },
   bounds: ({ input }) => input('shape'),
   lipschitz: ({ input }) => Math.max(input('shape'), 1.6),
@@ -671,7 +671,7 @@ export const cut: NodeDef = {
     if (!s) return empty();
     const c = ir.comp(p, 'xyz'.indexOf(value('axis') as string));
     const plane = ir.mul(ir.sub(c, derived('at')), derived('sgn'));
-    return { d: ir.max(s.d, plane), col: s.col };
+    return { d: ir.max(s.d, plane), col: s.col, mat: s.mat };
   },
   bounds: ({ input, params }) => {
     const b = input('shape');

@@ -5,6 +5,14 @@ import { decodeOutline } from '../../core/svg';
 
 /** One-line description of a node's key values, shown on the node card. */
 export function nodeSummary(n: GNode, mmPerUnit: number): string {
+  const s = baseSummary(n, mmPerUnit);
+  const m = n.params.material;
+  // a shape with its own material says so (clay, glossy, metal, glow)
+  if (getDef(n.type)?.colored && typeof m === 'string' && m !== 'scene') return s ? `${s} · ${m}` : m;
+  return s;
+}
+
+function baseSummary(n: GNode, mmPerUnit: number): string {
   const def = getDef(n.type);
   if (!def) return '';
   const len = (v: number) => `${fmt(v * mmPerUnit, mmPerUnit >= 10 ? 0 : 1)} mm`;

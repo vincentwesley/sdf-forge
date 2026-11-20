@@ -27,6 +27,7 @@ PREVIEW_SURFACE_INPUTS = {
     "diffuseColor": Sdf.ValueTypeNames.Color3f,
     "roughness": Sdf.ValueTypeNames.Float,
     "metallic": Sdf.ValueTypeNames.Float,
+    "emissiveColor": Sdf.ValueTypeNames.Color3f,
 }
 HAVE_SHADER_DEFS = Sdr.Registry().GetShaderNodeByIdentifier("UsdPreviewSurface") is not None
 

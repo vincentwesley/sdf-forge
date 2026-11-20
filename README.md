@@ -22,16 +22,21 @@ Made by **Vin** · **Vin's Atelier**.
 - **Start in seconds.** The page opens on a shape you can spin, click and drag. Add shapes from the toolbar (or
   switch to *Carve* to cut holes), move them with the arrows, and blend them like clay. A one-minute tour and a
   plain-language explanation of every node are built in.
-- **Go deep when you want to.** 35 node types in a real graph editor: drag a wire into empty space to get a list of
+- **Go deep when you want to.** 36 node types in a real graph editor: drag a wire into empty space to get a list of
   compatible nodes, right-click to add, view any node on its own, copy/paste between tabs, a command palette
   (`Ctrl/⌘ K`), undo/redo, and number fields that accept arithmetic.
+- **Give each part its own material.** Every shape can be clay, glossy, metal or glowing (or follow the scene's
+  default). Materials blend smoothly where shapes melt together, just like colours, and GLB, USDZ and 3MF exports
+  keep them. Try the *Desk lamp* example.
 - **Make real things.**
   - **STL** for 3D printing — Z-up millimetres, sized with a "longest side" field, with volume and filament estimates.
     A *Print check* view paints walls thinner than your nozzle red and steep overhangs orange.
   - **3MF** for modern slicers (Bambu Studio, PrusaSlicer, Cura) — millimetres, a colour palette taken from your
-    shapes, credit metadata and a preview image, in a file about a fifth the size of the STL.
-  - **GLB** (glTF 2.0) with normals and vertex colours, and **OBJ**, for Blender, game engines and the web.
-  - **USDZ** for AR on iPhone and iPad: open it to see the model in your room at real size.
+    shapes (each filament named after its material), credit metadata and a preview image, in a file about a fifth
+    the size of the STL.
+  - **GLB** (glTF 2.0) with normals, vertex colours and one PBR material per part (metal, glossy, glowing…), and
+    **OBJ**, for Blender, game engines and the web.
+  - **USDZ** for AR on iPhone and iPad: open it to see the model in your room at real size, with its materials.
   - **PNG** renders up to 4K (transparent background optional) and **turntable videos** (MP4 or WebM).
   - **Shader code** — a complete Shadertoy shader or just the GLSL distance function (not yet for shapes with text).
 - **Draw your own outlines.** The Profile node is a point editor: drag points, add them with a click, and make each

@@ -28,7 +28,7 @@ export const circle: NodeDef = {
   params: [
     { key: 'radius', label: 'Radius', kind: 'float', unit: 'length', default: 0.8, min: 0.001, softMax: 3 },
   ],
-  emit: ({ ir, p, num }) => ({ d: ir.sub(ir.length(p), num('radius')), col: ir.c(0) }),
+  emit: ({ ir, p, num }) => ({ d: ir.sub(ir.length(p), num('radius')), col: ir.c(0), mat: ir.c(0) }),
   bounds: ({ params }) => flat(params.radius as number, params.radius as number),
   credit: IQ2,
 };
@@ -54,7 +54,11 @@ export const rect: NodeDef = {
     const r = Math.min(pr.rounding as number, s[0] / 2, s[1] / 2);
     return { half: [s[0] / 2 - r, s[1] / 2 - r], r };
   },
-  emit: ({ ir, p, derived }) => ({ d: ir.sub(sdBox(ir, p, derived('half')), derived('r')), col: ir.c(0) }),
+  emit: ({ ir, p, derived }) => ({
+    d: ir.sub(sdBox(ir, p, derived('half')), derived('r')),
+    col: ir.c(0),
+    mat: ir.c(0),
+  }),
   bounds: ({ params }) => {
     const s = params.size as number[];
     return flat(Math.abs(s[0]) / 2, Math.abs(s[1]) / 2);
@@ -94,7 +98,7 @@ export const polygon: NodeDef = {
     const he = derived('he'),
       hs = derived('hs');
     const e = ir.sub(q, ir.vec2(he, ir.clamp(ir.y(q), ir.neg(hs), hs)));
-    return { d: ir.mul(ir.length(e), ir.sign(ir.sub(ir.x(q), he))), col: ir.c(0) };
+    return { d: ir.mul(ir.length(e), ir.sign(ir.sub(ir.x(q), he))), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => flat(params.radius as number, params.radius as number),
   credit: IQ2,
@@ -147,7 +151,7 @@ export const star: NodeDef = {
     const h = ir.clamp(ir.mul(ir.dot(pa, ba), derived('baInv')), 0, 1);
     const dist = ir.length(ir.sub(pa, ir.mul(ba, h)));
     const cross = ir.sub(ir.mul(ir.x(ba), ir.y(pa)), ir.mul(ir.y(ba), ir.x(pa)));
-    return { d: ir.mul(dist, ir.neg(ir.sign(cross))), col: ir.c(0) };
+    return { d: ir.mul(dist, ir.neg(ir.sign(cross))), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => flat(params.radius as number, params.radius as number),
   credit: IQ2,
@@ -191,7 +195,7 @@ export const text: NodeDef = {
     if (slot === null) return empty();
     const size = num('size');
     const g = ir.div(ir.sub(ir.div(p, size), ir.vec2(grid.x0, grid.y0)), grid.cell);
-    return { d: ir.mul(ir.tex2d(slot, g), size), col: ir.c(0) };
+    return { d: ir.mul(ir.tex2d(slot, g), size), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const g = textGrid(String(params.text ?? ''));
@@ -264,7 +268,7 @@ export const profile: NodeDef = {
       const all = ir.add(ir.add(c1, c2), c3); // 3 = all true, 0 = all false: crossing
       s = ir.select(ir.gt(ir.abs(ir.sub(all, 1.5)), 1), ir.neg(s), s);
     }
-    return { d: ir.sub(ir.mul(s, ir.sqrt(d2)), derived('r')), col: ir.c(0) };
+    return { d: ir.sub(ir.mul(s, ir.sqrt(d2)), derived('r')), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const poly = profilePolygon(params.points as number[]);
@@ -335,7 +339,7 @@ export const svg: NodeDef = {
     if (slot === null) return empty();
     const size = num('size');
     const g = ir.div(ir.sub(ir.div(p, size), ir.vec2(grid.x0, grid.y0)), grid.cell);
-    return { d: ir.mul(ir.tex2d(slot, g), size), col: ir.c(0) };
+    return { d: ir.mul(ir.tex2d(slot, g), size), col: ir.c(0), mat: ir.c(0) };
   },
   bounds: ({ params }) => {
     const g = svgGrid(String(params.svg ?? ''));

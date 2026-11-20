@@ -102,8 +102,10 @@ export interface InputDef {
 export interface ShapeVal {
   /** signed distance (float) */
   d: Expr;
-  /** linear RGB colour (vec3) */
+  /** sRGB colour (vec3) */
   col: Expr;
+  /** surface material (vec3): roughness, metallic, glow; see src/core/material.ts */
+  mat: Expr;
 }
 
 export interface EmitCtx {

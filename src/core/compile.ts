@@ -2,6 +2,7 @@ import { type Expr, IRBuilder } from './ir/ir';
 import { emitGlslFunction } from './ir/glsl';
 import { emitJsBody } from './ir/js';
 import { GLSL_NOISE, noise3 } from './ir/noise';
+import { materialValues } from './material';
 import { type TextGrid, glslTextureHelper, sampleGrid } from './text';
 import { type GNode, type SdfDoc, findOutput, inputEdges, resolveDims } from './graph/doc';
 import { getDef, paramsOf } from './nodes/registry';
@@ -56,6 +57,7 @@ export interface CompileOptions {
 }
 
 const SEL_SLOT = 0; // P[0] holds the selected node index
+const SCENE_MAT_SLOT = 1; // P[1..3]: the document's default material (roughness, metallic, glow)
 
 function isZeroVec(v: ParamValue | undefined) {
   return Array.isArray(v) && v.every((x) => x === 0);
@@ -77,6 +79,9 @@ function transformDerived(
   }
   return {};
 }
+
+/** derived slot holding a coloured shape's material numbers */
+const MAT_KEY = '__mat';
 
 const NO_BOUNDS: DeriveCtx = { inputBounds: () => null };
 
@@ -128,7 +133,12 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
         ? ir.vec2(parts[0], parts[1])
         : ir.vec3(parts[0], parts[1], parts[2]);
 
-  const emptyShape = (): ShapeVal => ({ d: ir.c(FAR), col: ir.vec3(0.5, 0.5, 0.5) });
+  const sceneMat = ir.vec3(
+    ir.param(SCENE_MAT_SLOT, 'sceneRough'),
+    ir.param(SCENE_MAT_SLOT + 1, 'sceneMetal'),
+    ir.param(SCENE_MAT_SLOT + 2, 'sceneGlow'),
+  );
+  const emptyShape = (): ShapeVal => ({ d: ir.c(FAR), col: ir.vec3(0.5, 0.5, 0.5), mat: sceneMat });
 
   const compileNode = (id: string, p: Expr): ShapeVal | null => {
     const key = `${id}|${p.id}`;
@@ -244,8 +254,8 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
       addIssue(id, 'error', `Internal error: ${(err as Error).message}`);
       result = emptyShape();
     }
-    if (def.colored) result = { d: result.d, col: ctx.vec('color') };
-    if (scaleOut) result = { d: ir.mul(result.d, scaleOut), col: result.col };
+    if (def.colored) result = { d: result.d, col: ctx.vec('color'), mat: asVec(slot(id, MAT_KEY, 3, true)) };
+    if (scaleOut) result = { ...result, d: ir.mul(result.d, scaleOut) };
     stack.delete(id);
 
     if (result.d.op !== 'const' || result.d.n !== FAR) {
@@ -271,7 +281,7 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
       const s = compileNode(rootId, ir.vec2(ir.x(p3), ir.neg(ir.z(p3))));
       if (s) {
         const w = ir.vec2(s.d, ir.sub(ir.abs(ir.y(p3)), 0.02));
-        root = { d: ir.add(ir.min(ir.maxComp(w), 0), ir.length(ir.max(w, 0))), col: s.col };
+        root = { d: ir.add(ir.min(ir.maxComp(w), 0), ir.length(ir.max(w, 0))), col: s.col, mat: s.mat };
       }
     } else {
       root = compileNode(rootId, p3) ?? emptyShape();
@@ -304,18 +314,21 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
     name: 'mapColor',
     ret: 'vec4',
     args: [{ name: 'p', ty: 'v3' }],
-    roots: [root.col, sel],
-    result: ([c, s]) => `vec4(${c}, ${s})`,
+    roots: [root.col, sel, root.mat],
+    // the material comes out through a global so the tree is evaluated once
+    result: ([c, s, m]) => `vec4(${c}, (gMat = ${m}, ${s}))`,
   });
   const texGlsl = textures.map((t, i) => glslTextureHelper(i, t)).join('\n');
-  const glsl = `${usesNoise ? GLSL_NOISE : ''}\n${texGlsl}\n${mapFn}\n${colFn}`;
+  const glsl = `${usesNoise ? GLSL_NOISE : ''}\n${texGlsl}\n${mapFn}\n// surface material of the last mapColor() call: roughness, metallic, glow\nvec3 gMat;\n${colFn}`;
 
   const xyz = [['x', 'y', 'z']];
   const jsMap = emitJsBody({ args: xyz, roots: [root.d], result: ([d]) => `return ${d[0]};` });
   const jsColor = emitJsBody({
     args: xyz,
-    roots: [root.col],
-    result: ([c]) => `out[0] = ${c[0]}; out[1] = ${c[1]}; out[2] = ${c[2]};`,
+    roots: [root.col, root.mat],
+    result: ([c, m]) =>
+      `out[0] = ${c[0]}; out[1] = ${c[1]}; out[2] = ${c[2]};\n` +
+      `if (out.length > 3) { out[3] = ${m[0]}; out[4] = ${m[1]}; out[5] = ${m[2]}; }`,
   });
   const leafExprs = leaves.map((id) => {
     const list = instances.get(id)!;
@@ -377,11 +390,14 @@ export function packParams(
   });
   const derivedCache = new Map<string, Record<string, number | number[]>>();
   P[SEL_SLOT] = selected && c.nodeIndex[selected] ? c.nodeIndex[selected] : -1;
+  P.set(materialValues('scene', doc.settings.material), SCENE_MAT_SLOT);
   for (const s of c.slots) {
     const node = byId.get(s.node);
     if (!node) continue;
     let v: ParamValue | number[] | undefined;
-    if (s.derived) {
+    if (s.derived && s.key === MAT_KEY) {
+      v = materialValues(node.params.material, doc.settings.material);
+    } else if (s.derived) {
       let d = derivedCache.get(s.node);
       if (!d) {
         d = deriveAll(node, ctxFor(s.node));

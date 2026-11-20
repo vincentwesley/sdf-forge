@@ -16,7 +16,7 @@ import { type SdfDoc } from '../src/core/graph/doc';
 import { EXAMPLES } from '../src/gallery/examples';
 import { DocBuilder } from '../src/gallery/builder';
 import { edgeForQuality, type ManifoldModule } from '../src/core/mesh/mesh';
-import { runExport, shapeColors, type MeshFormat } from '../src/core/mesh/pipeline';
+import { runExport, shapeSurfaces, type MeshFormat } from '../src/core/mesh/pipeline';
 import type { AABB } from '../src/core/nodes/types';
 
 const args = process.argv.slice(2);
@@ -144,7 +144,7 @@ async function main() {
           title: c.doc.title,
           mmPerUnit: mm,
           material: c.doc.settings.material,
-          palette: shapeColors(c.doc, comp.leaves),
+          surfaces: shapeSurfaces(c.doc, comp.leaves),
         },
         { format, edgeLength: edge },
       );

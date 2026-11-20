@@ -38,7 +38,7 @@ own way: free, in the browser, private, and printable by default.
 | Watertight export, validated | 🟡 | 🟡 | ✅ | 🟡 | ✅ | ✅ (trimesh + lib3mf in CI) |
 | STL / OBJ / GLB / 3MF | ✅ | 🟡 | ✅ | ✅ | ✅ | ✅ |
 | USDZ (iPhone AR) | ✅ | — | — | ✅ (paid) | 🟡 | **✅ USDZ export, ARKit-checked in CI** |
-| Per-shape materials | ✅ | 🟡 | — | ✅ | ✅ | 🟡 colour per shape, one material style |
+| Per-shape materials | ✅ | 🟡 | — | ✅ | ✅ | **✅ Clay / glossy / metal / glow per shape, blended; kept in GLB, USDZ, 3MF** |
 | Path-traced render | ✅ | ✅ | — | — | ✅ | 🟡 soft shadows, AO, studio reflections |
 | Turntable video / animation | 🟡 | — | — | ✅ | 🟡 | ✅ |
 | Parametric templates (Controls) | 🟡 | — | — | 🟡 | ✅ | ✅ |
@@ -75,9 +75,14 @@ own way: free, in the browser, private, and printable by default.
   your room at real size with AR Quick Look. Millimetres, Y up, one UsdPreviewSurface per shape colour. CI opens every
   file with Pixar's USD library and runs Apple's ARKit compliance rules.
 
+* **Per-shape materials** (Womp, Spline): every shape can be clay, glossy, metal or glowing, and materials blend
+  where shapes melt together, like Womp's goop. GLB and USDZ exports carry them as PBR materials, so a model opened
+  in Blender, a game engine or AR Quick Look looks the way it did in SDF Forge. New example: *Desk lamp*.
+
 ## Planned next, most valuable first
 
-1. **Per-shape material** (metal handle on a clay mug), like Womp.
+1. **Node groups**: collapse part of a graph into one reusable node with its own settings.
+2. **Shadertoy export for Text and SVG shapes** (bake the distance grid into the shader).
 
 ## Deliberately not planned
 

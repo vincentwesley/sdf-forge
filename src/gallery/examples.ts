@@ -209,7 +209,12 @@ export const EXAMPLES: Example[] = [
     build: () => {
       const b = new DocBuilder('Glazed donut');
       const dough = b.add('torus', { major: 1, minor: 0.48, color: C.dough }, undefined, 'Dough');
-      const icingShape = b.add('torus', { major: 1, minor: 0.52, color: C.pink }, undefined, 'Icing');
+      const icingShape = b.add(
+        'torus',
+        { major: 1, minor: 0.52, color: C.pink, material: 'glossy' },
+        undefined,
+        'Icing',
+      );
       const drip = b.add('displace', { pattern: 'noise', amount: 0.1, scale: 0.45, octaves: 2, seed: 3 }, [
         b.add('cut', { axis: 'y', offset: 0.0, keep: 'above' }, [icingShape]),
       ]);
@@ -514,6 +519,48 @@ export const EXAMPLES: Example[] = [
         { base: plate, cutter: cut },
       );
       b.output(badge).pin(name, 'text', 'Name').pin(heart, 'size', 'Size');
+      return b.done();
+    },
+  },
+  {
+    id: 'lamp',
+    title: 'Desk lamp',
+    description:
+      'Per-shape materials: a brushed metal stand, a glossy enamel shade and a glowing bulb. Where the smooth union blends parts, their materials blend too.',
+    tags: ['art', 'learn'],
+    build: () => {
+      const b = new DocBuilder('Desk lamp');
+      const metal = { color: [0.62, 0.62, 0.66], material: 'metal' };
+      const base = b.add(
+        'cylinder',
+        { radius: 0.75, height: 0.18, rounding: 0.06, position: [0, -1.2, 0], ...metal },
+        undefined,
+        'Base',
+      );
+      const stem = b.add(
+        'cylinder',
+        { radius: 0.07, height: 1.7, position: [0, -0.3, 0], ...metal },
+        undefined,
+        'Stem',
+      );
+      const shadeOuter = b.add('cone', {
+        height: 0.8,
+        bottom: 0.75,
+        top: 0.28,
+        position: [0, 0.75, 0],
+        color: [0.85, 0.25, 0.2],
+        material: 'glossy',
+      });
+      const shade = b.add('shell', { thickness: 0.04 }, [shadeOuter]);
+      const shadeCut = b.add('cut', { axis: 'y', offset: 0.42, keep: 'above' }, [shade], 'Shade');
+      const bulb = b.add(
+        'sphere',
+        { radius: 0.33, position: [0, 0.22, 0], color: [1, 0.8, 0.45], material: 'glow' },
+        undefined,
+        'Bulb',
+      );
+      const u = b.add('union', { smooth: 0.08 }, [base, stem, shadeCut, bulb]);
+      b.output(u).pin(u, 'smooth', 'Blend');
       return b.done();
     },
   },

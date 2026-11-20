@@ -89,7 +89,7 @@ test('shader and CPU evaluator agree for every gallery example and every node ty
         },
       });
     }
-    const out: { name: string; maxErr: number; maxColErr: number; n: number }[] = [];
+    const out: { name: string; maxErr: number; maxColErr: number; maxMatErr: number; n: number }[] = [];
     let seed = 1;
     const rnd = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
     for (const { name, doc } of docs) {
@@ -100,25 +100,34 @@ test('shader and CPU evaluator agree for every gallery example and every node ty
         for (let k = 0; k < 3; k++) pts.push(b.min[k] - 0.3 + rnd() * (b.max[k] - b.min[k] + 0.6));
       const r = api.agreement(doc as never, pts);
       let maxErr = 0,
-        maxColErr = 0;
+        maxColErr = 0,
+        maxMatErr = 0;
       for (let i = 0; i < r.cpu.length; i++) {
         const scale = Math.max(1, Math.abs(r.cpu[i]));
         maxErr = Math.max(maxErr, Math.abs(r.gpu[i] - r.cpu[i]) / scale);
         // colours only matter near the surface, where shading happens
         if (Math.abs(r.cpu[i]) < 0.2)
-          for (let k = 0; k < 3; k++)
+          for (let k = 0; k < 3; k++) {
             maxColErr = Math.max(maxColErr, Math.abs(r.gpuColor[i * 3 + k] - r.cpuColor[i * 3 + k]));
+            maxMatErr = Math.max(maxMatErr, Math.abs(r.gpuMat[i * 3 + k] - r.cpuMat[i * 3 + k]));
+          }
       }
-      out.push({ name, maxErr, maxColErr, n: r.cpu.length });
+      out.push({ name, maxErr, maxColErr, maxMatErr, n: r.cpu.length });
     }
     return out;
   });
   console.table(
-    report.map((r) => ({ ...r, maxErr: r.maxErr.toExponential(2), maxColErr: r.maxColErr.toExponential(2) })),
+    report.map((r) => ({
+      ...r,
+      maxErr: r.maxErr.toExponential(2),
+      maxColErr: r.maxColErr.toExponential(2),
+      maxMatErr: r.maxMatErr.toExponential(2),
+    })),
   );
   for (const r of report) {
     expect(r.n, r.name).toBe(1500);
     expect(r.maxErr, `${r.name} distance`).toBeLessThan(2e-3);
     expect(r.maxColErr, `${r.name} colour`).toBeLessThan(2e-2);
+    expect(r.maxMatErr, `${r.name} material`).toBeLessThan(2e-2);
   }
 });

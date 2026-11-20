@@ -37,7 +37,7 @@ export const extrude: NodeDef = {
     const r = derived('r');
     const w = ir.vec2(ir.add(s.d, r), ir.sub(ir.abs(ir.y(p)), derived('ha')));
     const d = ir.sub(ir.add(ir.min(ir.maxComp(w), 0), ir.length(ir.max(w, 0))), r);
-    return { d, col: s.col };
+    return { d, col: s.col, mat: s.mat };
   },
   bounds: ({ input, params }) => {
     const b = input('profile');

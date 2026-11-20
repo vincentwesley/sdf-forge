@@ -124,7 +124,9 @@ function useShortcuts() {
         actions.set({ palette: !s.palette });
         return;
       }
-      if (typing || s.dialog || s.palette) return;
+      // a dropdown has no undo of its own, so Ctrl+Z / Ctrl+Y still undo the change it just made
+      const historyKey = mod && /^[zy]$/i.test(e.key) && t.matches('select');
+      if ((typing && !historyKey) || s.dialog || s.palette) return;
       if (mod && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) redo();

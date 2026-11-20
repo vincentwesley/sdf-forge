@@ -19,7 +19,7 @@ function setSettingsView(mode: 'print') {
 import { getScene } from '../../state/scene';
 import { fmt, parseNumber } from '../format';
 import { edgeForQuality } from '../../core/mesh/mesh';
-import { shapeColors, type ExportStats, type MeshFormat } from '../../core/mesh/pipeline';
+import { shapeSurfaces, type ExportStats, type MeshFormat } from '../../core/mesh/pipeline';
 import { cancelExports, downloadBlob, exportMesh, safeFilename } from '../../workers/meshClient';
 import { getActiveRenderer } from '../../render/registry';
 import { glslLibrary, shadertoySource } from '../../core/shadertoy';
@@ -175,7 +175,7 @@ function ModelTab() {
           mmPerUnit: s.doc.settings.mmPerUnit,
           material: s.doc.settings.material,
           textures: sc.compiled.textures,
-          palette: shapeColors(s.doc, sc.compiled.leaves),
+          surfaces: shapeSurfaces(s.doc, sc.compiled.leaves),
           thumbnail,
         },
         { format, edgeLength: edge, simplify: simplify ? edge * 0.12 : 0 },

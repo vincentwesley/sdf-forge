@@ -1,10 +1,13 @@
 import { makeEvaluator } from '../compile';
 import type { AABB } from '../nodes/types';
-import type { SdfDoc } from '../graph/doc';
 import { type ManifoldModule, type MeshResult, bboxOf, extractMesh, sdfNormals } from './mesh';
 import { srgbToLinear, toPrintSpace, writeGLB, writeOBJ, writeSTL } from './writers';
 import { write3MF } from './threemf';
 import { writeUSDZ } from './usdz';
+import { type Surface, surfaceGroups } from './surfaces';
+import { type MaterialStyle, exportRoughness, materialValues } from '../material';
+
+export { shapeSurfaces, type Surface } from './surfaces';
 
 export type MeshFormat = 'stl' | '3mf' | 'glb' | 'obj' | 'usdz';
 
@@ -18,25 +21,14 @@ export interface ExportInput {
   title: string;
   /** millimetres per scene unit (after any resize) */
   mmPerUnit: number;
-  material: 'clay' | 'glossy' | 'metal';
+  /** the document's default material (for shapes set to "Same as scene") */
+  material: MaterialStyle;
   /** distance grids used by text nodes */
   textures?: { data: Float32Array; w: number; h: number; cell: number }[];
   /** PNG preview embedded in 3MF files */
   thumbnail?: Uint8Array | null;
-  /** the shapes' own colours (sRGB), used as the 3MF filament palette */
-  palette?: [number, number, number][] | null;
-}
-
-/** Distinct colours set on the shapes that feed the output (sRGB 0..1). */
-export function shapeColors(doc: SdfDoc, leaves: string[]): [number, number, number][] {
-  const out: [number, number, number][] = [];
-  for (const id of leaves) {
-    const c = doc.nodes.find((n) => n.id === id)?.params.color;
-    if (!Array.isArray(c) || c.length !== 3) continue;
-    const rgb = c.map(Number) as [number, number, number];
-    if (!out.some((o) => Math.hypot(o[0] - rgb[0], o[1] - rgb[1], o[2] - rgb[2]) < 1e-3)) out.push(rgb);
-  }
-  return out;
+  /** the shapes' own colours and materials (from shapeSurfaces): 3MF filaments, USDZ/GLB materials */
+  surfaces?: Surface[] | null;
 }
 
 export interface ExportOptions {
@@ -92,39 +84,32 @@ export async function runExport(
   }
   const normals = sdfNormals(ev.map, mesh.positions, opts.edgeLength * 0.25);
   const colors = new Float32Array(mesh.positions.length);
-  const c = [0, 0, 0];
+  const srgb = new Float32Array(mesh.positions.length);
+  const mats = new Float32Array(mesh.positions.length);
+  const c = [0, 0, 0, 0, 0, 0];
   for (let i = 0; i < mesh.positions.length; i += 3) {
     ev.color(mesh.positions[i], mesh.positions[i + 1], mesh.positions[i + 2], c);
-    colors[i] = srgbToLinear(c[0]);
-    colors[i + 1] = srgbToLinear(c[1]);
-    colors[i + 2] = srgbToLinear(c[2]);
+    for (let k = 0; k < 3; k++) {
+      srgb[i + k] = Math.max(0, Math.min(1, c[k]));
+      colors[i + k] = srgbToLinear(srgb[i + k]);
+      mats[i + k] = c[3 + k];
+    }
   }
-  const srgb = colors.map((v) => (v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1 / 2.4) - 0.055));
+  const sceneMat = materialValues('scene', input.material);
+  const groups = surfaceGroups(srgb, mats, mesh.indices, input.surfaces, sceneMat);
   if (opts.format === '3mf') {
     // 3MF: millimetres, Z up like STL, plus a colour palette, credit and thumbnail
     const out = toPrintSpace(mesh.positions, mm);
-    const bytes = await write3MF(out, mesh.indices, {
-      title,
-      colors: srgb,
-      thumbnail: input.thumbnail,
-      palette: input.palette,
-    });
+    const bytes = await write3MF(out, mesh.indices, { title, groups, thumbnail: input.thumbnail });
     return { bytes, mime: 'model/3mf', ext: '3mf', stats };
   }
-  const mat = input.material;
-  const roughness = mat === 'clay' ? 0.7 : mat === 'glossy' ? 0.25 : 0.3;
-  const metallic = mat === 'metal' ? 1 : 0;
+  const roughness = exportRoughness(sceneMat[0]);
+  const metallic = sceneMat[1];
   if (opts.format === 'usdz') {
     // USDZ: millimetres (metersPerUnit 0.001, so AR shows true size), Y up, a material per colour
     const pos = new Float32Array(mesh.positions.length);
     for (let i = 0; i < pos.length; i++) pos[i] = mesh.positions[i] * mm;
-    const bytes = await writeUSDZ(pos, normals, mesh.indices, {
-      title,
-      colors: srgb,
-      palette: input.palette,
-      roughness,
-      metallic,
-    });
+    const bytes = await writeUSDZ(pos, normals, mesh.indices, { title, groups });
     return { bytes, mime: 'model/vnd.usdz+zip', ext: 'usdz', stats };
   }
   if (opts.format === 'obj') {
@@ -144,6 +129,7 @@ export async function runExport(
     scale: mm / 1000,
     roughness,
     metallic,
+    groups,
   });
   return { bytes, mime: 'model/gltf-binary', ext: 'glb', stats };
 }
