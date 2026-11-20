@@ -1,6 +1,6 @@
 import { decodeDoc, parseHash } from './core/share';
 import { exampleById, DEFAULT_EXAMPLE } from './gallery/examples';
-import { loadDoc, loadSavedDoc, toast } from './state/store';
+import { actions, loadDoc, loadSavedDoc, toast } from './state/store';
 
 function clearHash() {
   history.replaceState(null, '', location.pathname + location.search);
@@ -9,6 +9,21 @@ function clearHash() {
 /** Load whatever the URL asks for (shared graph or example), else the autosave, else the welcome example. */
 export async function bootDocument(initial: boolean) {
   const h = parseHash(location.hash);
+  if (h?.view && initial) {
+    // view-only player (embeds): show the shape, never touch the visitor's own saved work
+    actions.set({ viewOnly: true });
+    try {
+      const doc =
+        h.kind === 'graph'
+          ? await decodeDoc(h.code)
+          : (exampleById(h.id)?.build() ?? exampleById(DEFAULT_EXAMPLE)!.build());
+      loadDoc(doc);
+    } catch {
+      loadDoc(exampleById(DEFAULT_EXAMPLE)!.build());
+      toast('This link is damaged or incomplete, so it could not be opened.', 'error', 6000);
+    }
+    return;
+  }
   if (h?.kind === 'graph') {
     try {
       const doc = await decodeDoc(h.code);

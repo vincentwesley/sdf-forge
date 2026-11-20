@@ -131,14 +131,29 @@ export async function shareUrl(doc: SdfDoc, base = location.href): Promise<strin
   return u.toString();
 }
 
+/** What a URL hash asks for. `view` = open in the view-only player (for embedding). */
 export function parseHash(
   hash: string,
-): { kind: 'graph'; code: string } | { kind: 'example'; id: string } | null {
+): (({ kind: 'graph'; code: string } | { kind: 'example'; id: string }) & { view?: true }) | null {
   const h = hash.replace(/^#/, '');
   const params = new URLSearchParams(h);
+  const view = params.get('view') === '1' ? { view: true as const } : {};
   const g = params.get('g');
-  if (g) return { kind: 'graph', code: g };
+  if (g) return { kind: 'graph', code: g, ...view };
   const ex = params.get('example');
-  if (ex) return { kind: 'example', id: ex };
+  if (ex) return { kind: 'example', id: ex, ...view };
   return null;
+}
+
+/** A view-only link for embedding (iframe) or showing off a shape. */
+export async function viewUrl(doc: SdfDoc, base = location.href): Promise<string> {
+  const u = new URL(base);
+  u.hash = `g=${await encodeDoc(doc)}&view=1`;
+  return u.toString();
+}
+
+/** iframe code that embeds the view-only player. */
+export function embedCode(url: string, title: string): string {
+  const t = title.replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c]!);
+  return `<iframe src="${url.replace(/"/g, '%22')}" title="${t} (SDF Forge)" width="640" height="480" style="border:0;border-radius:12px" allow="fullscreen" loading="lazy"></iframe>`;
 }

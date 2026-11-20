@@ -1,6 +1,6 @@
 # How SDF Forge compares with other 3D tools
 
-Researched 2026-11-19 from public product pages, documentation and release notes (sources at the end). The point
+Researched 2026-11-19 and updated 2026-11-20 from public product pages, documentation and release notes (sources at the end). The point
 is not to clone any tool. It is to find what people already expect from 3D software that SDF Forge can offer in its
 own way: free, in the browser, private, and printable by default.
 
@@ -15,6 +15,9 @@ own way: free, in the browser, private, and printable by default.
 | **Fusion 360 / Shapr3D** | Professional parametric CAD | Subscriptions | Desktop / iPad |
 | **Substance 3D Modeler** | SDF clay sculpting in VR or on desktop | Subscription | Windows / Quest |
 | **Blender** | Everything 3D | Node groups / reusable parts | — | — | 🟡 groups | ✅ components | ✅ components | **✅ Collapsible groups with their own settings; My parts library** |
+| Gear / mechanical generators | — | — | 🟡 | — | 🟡 add-in | **✅ Gear node (true involute, meshing)** |
+| Embed a live viewer in a web page | 🟡 | — | 🟡 | ✅ | 🟡 | **✅ View-only player with Controls** |
+| "Fits my printer?" check | — | — | — | — | 🟡 | **✅ Printer presets, scale to fit** |
 | Free, open source | Desktop |
 
 ## Feature matrix
@@ -83,9 +86,20 @@ own way: free, in the browser, private, and printable by default.
 * **Node groups** (Blender node groups, Spline/Fusion components): fold part of a graph into one card with its own
   inputs and a few chosen settings, then duplicate it or save it to *My parts* to reuse in other shapes.
 
+* **Shadertoy export for Text and SVG shapes**: the outlines are baked into the shader, so every shape pastes
+  straight into Shadertoy.
+
+* **Gear node** (Fusion 360 needs an add-in for this): true involute spur gears that mesh, from four sliders.
+* **Embed on a website** (Spline's Viewer and embed code): a view-only player where visitors can try the Controls.
+* **Printer fit check**: pick your printer in the export dialog to see whether the model fits, and scale it to fit.
+
 ## Planned next, most valuable first
 
-1. **Shadertoy export for Text and SVG shapes** (bake the distance grid into the shader).
+1. **Thread node** for printable screws and nuts (Fusion's modelled threads).
+2. **Linked group instances**: edit one copy of a group and the others follow.
+3. **Glow bloom** in the renderer, so glowing parts light up their surroundings.
+4. **More fonts** for the Text node (SIL Open Font License families).
+5. **Named versions** of a shape kept in the browser.
 
 ## Deliberately not planned
 
@@ -106,10 +120,17 @@ own way: free, in the browser, private, and printable by default.
 * Tinkercad: [align tool](https://curriculum.spolearninglab.com/software/3d_modeling/tinkercad/tinkercad_align.html) ·
   [importing and advanced features](https://eolasprints.com/blogs/tinkercad-complete-guide-series/adding-text-importing-models-advanced-features) ·
   [ruler and workplane](https://packtpub.com/en-fr/product/taking-tinkercad-to-the-next-level-9781835468005/chapter/chapter-6-using-the-ruler-and-workplane-tool-to-dimension-our-designs-8/section/using-the-workplane-tool-ch08lvl1sec41)
-* Spline: [USDZ export docs](https://docs.spline.design/exporting-your-scene/files/exporting-as-usdz)
+* Spline: [USDZ export docs](https://docs.spline.design/exporting-your-scene/files/exporting-as-usdz) ·
+  [Viewer export](https://docs.spline.design/exporting-your-scene/web/exporting-as-spline-viewer.md) ·
+  [public URLs and embeds](https://docs.spline.design/exporting-your-scene/web/exporting-as-public-ur-ls.md)
 * Fusion 360: [Section Analysis](https://help.autodesk.com/cloudhelp/ENU/Fusion-Model/files/SLD-SECTION-ANALYSIS.htm) ·
   [analysis tools](https://help.autodesk.com/cloudhelp/ENU/Fusion-Model/files/SLD-INSPECT-TOOLS.htm) ·
-  Shapr3D: [vs Fusion 360](https://www.shapr3d.com/content-library/shapr3d-vs-fusion-360)
+  Shapr3D: [vs Fusion 360](https://www.shapr3d.com/content-library/shapr3d-vs-fusion-360) ·
+  Fusion gears: [Spur Gear add-in](https://www.autodesk.com/products/fusion-360/blog/?p=33476) ·
+  [threads](https://www.autodesk.com/products/fusion-360/blog/how-to-create-threads-in-fusion/)
+* Printer build volumes: [Bambu Lab A1 mini spec sheet](https://www.3dprintergear.com.au/assets/files/A1%20Mini%20TDS.pdf) ·
+  [A1 vs Prusa MK4](https://3dpros.com/compares/bambu-lab-a1-vs-prusa-mk4) ·
+  [A1 mini vs Ender-3 V3 KE](https://3dpros.com/compares/bambu-lab-a1-mini-vs-ender-3-v3-ke)
 * Substance 3D Modeler: [product page](https://www.adobe.com/products/substance3d-modeler.html) ·
   [CG Channel 1.18](https://www.cgchannel.com/2025/01/adobe-releases-substance-3d-modeler-1-18)
 * Chamfer formulas: Mercury [hg_sdf](https://mercury.sexy/hg_sdf/) (MIT)

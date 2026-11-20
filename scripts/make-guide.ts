@@ -311,7 +311,7 @@ of a vase, bottle or chess piece. Connected to <b>Extrude</b>, it becomes a plat
 <ol class="steps">
 <li>Switch the view to <b>Print check</b>. Walls thinner than your nozzle show <b style="color:#c92a2a">red</b>, steep
 overhangs that need supports show <b style="color:#d9730d">orange</b>.</li>
-<li>Click <b>Export</b> and type the <b>Longest side</b> in millimetres.</li>
+<li>Click <b>Export</b>, set the <b>Longest side</b> (mm) and pick your <b>Printer</b>.</li>
 <li>Choose <b>3MF</b> for Bambu Studio, PrusaSlicer or Cura, or <b>STL</b> for any slicer.</li>
 <li>Pick a detail level (Standard is right for most prints) and export. You get a summary: size, volume, an estimate
 of filament, and <i>Watertight and manifold</i>, which means ready to print.</li>
@@ -332,13 +332,13 @@ material, and print.</p>
 <h3>Other ways to export</h3>
 <table class="compact">
 <tr><th>Format</th><th>Use it for</th><th>Notes</th></tr>
-<tr><td><b>3MF</b></td><td>Modern slicers</td><td>Millimetres, your shapes' colours as named filaments, a preview image, small files</td></tr>
+<tr><td><b>3MF</b></td><td>Modern slicers</td><td>Millimetres, colours as filaments, preview, small</td></tr>
 <tr><td><b>STL</b></td><td>Any slicer or 3D printing service</td><td>Millimetres, Z up</td></tr>
-<tr><td><b>GLB</b> (glTF)</td><td>Game engines (Unity, Godot, Unreal), Blender, web viewers, AR</td><td>Colours, smooth normals and a material per part (metal, glossy, glow)</td></tr>
+<tr><td><b>GLB</b> (glTF)</td><td>Unity, Godot, Unreal, Blender, the web</td><td>Colours, smooth normals, materials</td></tr>
 <tr><td><b>OBJ</b></td><td>Almost any 3D app</td><td>Millimetres, vertex colours</td></tr>
-<tr><td><b>USDZ</b></td><td>AR on iPhone and iPad (open the file to place it in your room), Apple apps</td><td>Real size, colours and materials</td></tr>
+<tr><td><b>USDZ</b></td><td>AR on iPhone and iPad, at real size</td><td>Colours, materials</td></tr>
 <tr><td><b>PNG image</b></td><td>Posts, thumbnails, documents</td><td>Up to 4K, transparent background option</td></tr>
-<tr><td><b>Turntable video</b></td><td>Social media, portfolios, product pages</td><td>MP4 or WebM; can also play your animation</td></tr>
+<tr><td><b>Video</b></td><td>Social media, product pages</td><td>MP4 or WebM turntable</td></tr>
 <tr><td><b>Shader code</b></td><td>Shadertoy and graphics programming</td><td>A complete, working shader</td></tr>
 </table>
 </section>
@@ -361,8 +361,8 @@ ${fig(s.gallery, 'The Gallery: filter by Printable, Game assets, Art or Learn.')
 <div>
 <h3>Share a link</h3>
 <p><b>Share</b> creates a link that contains your whole shape, with no account and no upload. Anyone who opens it gets
-an editable copy. It's great for sending a design to a friend, posting a template, or handing in homework. You can
-also download the graph as a file.</p>
+an editable copy. <i>Embed on a website</i> gives a view-only player for your page, where visitors can try the
+Controls.</p>
 ${fig(s.share, 'The Share dialog.')}
 </div>
 <div>

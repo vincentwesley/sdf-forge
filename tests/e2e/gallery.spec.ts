@@ -21,6 +21,7 @@ const IDS = [
   'bracket',
   'heart-badge',
   'lamp',
+  'gears',
   'gem',
 ];
 

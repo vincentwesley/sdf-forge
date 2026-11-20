@@ -1,4 +1,5 @@
 import { type Compiled, analyze, compile, packParams } from './compile';
+import { bakedTextureGlsl } from './bake';
 import type { SdfDoc } from './graph/doc';
 
 /**
@@ -6,10 +7,9 @@ import type { SdfDoc } from './graph/doc';
  * distance function with parameters baked in, plus a compact ray marcher.
  */
 export function shadertoySource(doc: SdfDoc): string {
-  const c: Compiled = compile(doc);
+  // Text and SVG distance grids are baked into the source as const arrays (no texture channel needed)
+  const c: Compiled = compile(doc, { textureGlsl: bakedTextureGlsl });
   const P = new Float32Array(c.paramCount);
-  if (c.textures.length)
-    return `// ${doc.title}\n// This shape uses Text, which needs a distance texture, so it can't be exported as a\n// self-contained Shadertoy shader yet. Export a mesh instead, or remove the Text node.\n`;
   packParams(doc, c, P);
   const b = analyze(doc, c.rootId).bounds ?? { min: [-1, -1, -1], max: [1, 1, 1] };
   const ctr = b.min.map((v, i) => (v + b.max[i]) / 2);

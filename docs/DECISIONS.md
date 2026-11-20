@@ -125,3 +125,19 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     in localStorage that inserts fresh copies with new ids into any shape; parts from storage are cleaned like
     untrusted documents. Linked instances (edit one, all update) are left for later: they need per-instance
     parameter slots in the compiler and a way to show which copies are linked, and copies cover the common case.
+24. **Shadertoy export bakes Text/SVG distance grids into the source** (vs. asking users to upload a texture to a
+    channel, or evaluating glyph polygons in the shader). Shadertoy channels only take its own media, and polygon
+    loops are slow for long strings. The grid is reduced to every k-th sample (k chosen so at most 8,192 remain;
+    those values stay exact), quantised to 16 bits over its range and packed two per `uint` in a `const` array;
+    `sfTex<n>` does the same clamped bilinear lookup and outside-the-grid distance term as the app. A JS twin of
+    the lookup (`sampleBaked`) is tested against the full grid. The app itself keeps the full-resolution texture.
+25. **Gears fold into a half-tooth wedge** (vs. a full-gear polygon, or a box-tooth approximation). An involute gear
+    has 2z mirror lines; reflecting a point into the wedge 0 ≤ θ ≤ π/z keeps its distance to the outline exact, so
+    the shader measures only a 14-point half-tooth polyline (tip land, involute flank, radial part, root land) whose
+    points are uniforms: every setting, the tooth count included, is a slider that never recompiles. Undercut is not
+    modelled (fuller roots below ~17 teeth), which is harmless for printing.
+26. **Embeds are the same app in a view-only mode** (`#g=…&view=1`), not a separate player build. It reuses the
+    renderer and Controls, hides the editor, ignores clicks and never autosaves, so an embedded shape can't overwrite
+    a visitor's own work. *Open in SDF Forge* links to the shape as it was shared, not as the visitor tweaked it.
+27. **The printer check uses published build volumes and allows a 90° turn**, as slicers do; *Scale to fit* leaves
+    a 3 % margin for brims and skirts.

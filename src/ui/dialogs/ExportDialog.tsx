@@ -23,6 +23,7 @@ import { shapeSurfaces, type ExportStats, type MeshFormat } from '../../core/mes
 import { cancelExports, downloadBlob, exportMesh, safeFilename } from '../../workers/meshClient';
 import { getActiveRenderer } from '../../render/registry';
 import { glslLibrary, shadertoySource } from '../../core/shadertoy';
+import { PRINTERS, fitOnBed } from '../../core/printers';
 import { VideoTab } from './VideoTab';
 
 type Tab = 'model' | 'image' | 'video' | 'code';
@@ -246,6 +247,9 @@ function ModelTab() {
           </span>
         </div>
       </div>
+      {printFormat && (
+        <BedCheck size={size as [number, number, number]} onScale={(k) => applySize(String(longest * k))} />
+      )}
       <div className="form-row">
         <span className="label" id="q-lbl">
           Detail
@@ -461,7 +465,7 @@ function CodeTab() {
       <p className="muted" style={{ fontSize: 12, marginTop: -2 }}>
         {kind === 'shadertoy'
           ? 'Paste into a new shader on shadertoy.com — it renders and orbits your shape.'
-          : 'float map(vec3 p) returns the signed distance; vec4 mapColor(vec3 p) returns the colour. Values are baked in.'}
+          : 'float map(vec3 p) returns the signed distance; vec4 mapColor(vec3 p) returns the colour and sets gMat (roughness, metallic, glow). Values, text and SVG outlines are baked in.'}
       </p>
       <textarea
         className="code-box"
@@ -491,6 +495,60 @@ function CodeTab() {
         >
           <Copy size={15} /> Copy
         </button>
+      </div>
+    </div>
+  );
+}
+
+const PRINTER_KEY = 'sdf-forge:printer';
+
+/** "Does it fit on my printer?" for STL/3MF, with a one-click scale to fit. */
+function BedCheck({ size, onScale }: { size: [number, number, number]; onScale: (k: number) => void }) {
+  const [id, setId] = useState(() => {
+    try {
+      return localStorage.getItem(PRINTER_KEY) ?? 'bambu256';
+    } catch {
+      return 'bambu256';
+    }
+  });
+  const printer = PRINTERS.find((p) => p.id === id) ?? PRINTERS[1];
+  // scene X, Y (up), Z → print width, depth, height
+  const r = fitOnBed([size[0], size[2], size[1]], printer.bed);
+  const bed = printer.bed.join(' × ');
+  return (
+    <div className="form-row">
+      <label htmlFor="exp-printer">Printer</label>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', minWidth: 0 }}>
+        <select
+          id="exp-printer"
+          className="select"
+          style={{ flex: 'none', maxWidth: '100%' }}
+          value={printer.id}
+          onChange={(e) => {
+            setId(e.target.value);
+            try {
+              localStorage.setItem(PRINTER_KEY, e.target.value);
+            } catch {
+              /* private mode: just don't remember it */
+            }
+          }}
+        >
+          {PRINTERS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        <span role="status" data-testid="bed-fit" className={r.fits ? 'text-2' : 'warn-text'}>
+          {r.fits
+            ? `Fits the ${bed} mm bed${r.rotated ? ' when turned 90°' : ''}.`
+            : `Too big for the ${bed} mm bed.`}
+        </span>
+        {!r.fits && (
+          <button type="button" className="btn sm" onClick={() => onScale(r.scaleToFit)}>
+            Scale to fit
+          </button>
+        )}
       </div>
     </div>
   );

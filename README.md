@@ -22,7 +22,7 @@ Made by **Vin** · **Vin's Atelier**.
 - **Start in seconds.** The page opens on a shape you can spin, click and drag. Add shapes from the toolbar (or
   switch to *Carve* to cut holes), move them with the arrows, and blend them like clay. A one-minute tour and a
   plain-language explanation of every node are built in.
-- **Go deep when you want to.** 36 node types in a real graph editor: drag a wire into empty space to get a list of
+- **Go deep when you want to.** 37 node types in a real graph editor: drag a wire into empty space to get a list of
   compatible nodes, right-click to add, view any node on its own, copy/paste between tabs, a command palette
   (`Ctrl/⌘ K`), undo/redo, and number fields that accept arithmetic.
 - **Give each part its own material.** Every shape can be clay, glossy, metal or glowing (or follow the scene's
@@ -38,7 +38,8 @@ Made by **Vin** · **Vin's Atelier**.
     **OBJ**, for Blender, game engines and the web.
   - **USDZ** for AR on iPhone and iPad: open it to see the model in your room at real size, with its materials.
   - **PNG** renders up to 4K (transparent background optional) and **turntable videos** (MP4 or WebM).
-  - **Shader code** — a complete Shadertoy shader or just the GLSL distance function (not yet for shapes with text).
+  - **Shader code** — a complete Shadertoy shader or just the GLSL distance function, with text and SVG outlines
+    baked in, so it pastes straight into Shadertoy.
 - **Tidy big graphs into groups.** Select nodes and press Ctrl+G to fold them into one card with its own inputs and
   the settings you choose to show. Save a group to *My parts* and drop it into any other shape.
 - **Draw your own outlines.** The Profile node is a point editor: drag points, add them with a click, and make each
@@ -52,7 +53,10 @@ Made by **Vin** · **Vin's Atelier**.
   ring, bowl, gyroid sphere) come with their key sizes pinned, so you can make one your own without touching the graph.
 - **Animate.** Any pinned number can swing between two values: press Play in the 3D view, or record it in a
   turntable video (with or without the camera turning). Try the *Sphere to cube* example.
-- **Share.** A link holds the whole graph — no account, no server, nothing uploaded.
+- **Share and embed.** A link holds the whole graph — no account, no server, nothing uploaded. *Embed on a website*
+  gives an iframe with a view-only player where visitors can turn the shape and try its Controls.
+- **Make working parts.** A Gear node draws true involute spur gears that mesh; the export dialog tells you whether
+  the model fits your printer and can scale it to fit.
 
 ## How it works
 

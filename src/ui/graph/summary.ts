@@ -36,6 +36,8 @@ function baseSummary(n: GNode, mmPerUnit: number): string {
       return `${(p.points as number[]).length / 3} points`;
     case 'repeat':
       return `${p.countX} × ${p.countY} × ${p.countZ} copies`;
+    case 'gear':
+      return `${p.teeth} teeth, module ${fmt((p.module as number) * mmPerUnit, 2)} mm`;
     case 'radial':
       return `${p.count} copies`;
     case 'mirror':

@@ -70,6 +70,8 @@ export interface EditorState {
   addMode: ops.AddMode;
   /** set when a shared link or example replaced the user's previous work */
   restorable: SdfDoc | null;
+  /** view-only player (embed links): no editing UI, nothing saved */
+  viewOnly: boolean;
 }
 
 const PREFS_KEY = 'sdf-forge:prefs';
@@ -124,6 +126,7 @@ export const store = createStore<EditorState>(() => ({
   tourDone: false,
   addMode: 'add',
   restorable: null,
+  viewOnly: false,
   ...loadPrefs(),
 }));
 
@@ -139,7 +142,7 @@ const set = (p: Partial<EditorState>) => store.setState(p);
 
 let saveTimer = 0;
 store.subscribe((s, prev) => {
-  if (s.doc !== prev.doc) {
+  if (s.doc !== prev.doc && !s.viewOnly) {
     clearTimeout(saveTimer);
     saveTimer = window.setTimeout(() => {
       try {

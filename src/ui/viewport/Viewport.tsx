@@ -137,6 +137,7 @@ export function Viewport() {
   const playing = useEditor((s) => s.playing);
   const section = useEditor((s) => s.section);
   const measuring = useEditor((s) => s.measure !== null);
+  const viewOnly = useEditor((s) => s.viewOnly);
   const gizmoMode = useEditor((s) => s.gizmoMode);
   const hasSelection = useEditor((s) => s.selection.length > 0);
   const ortho = useEditor((s) => !!s.camera.ortho);
@@ -365,7 +366,8 @@ export function Viewport() {
     pointers.current.delete(e.pointerId);
     if (pointers.current.size === 0) g.mode = null;
     else if (pointers.current.size === 1) g.mode = 'orbit';
-    if (wasClick) pickAt(e.clientX, e.clientY);
+    // the view-only player has nothing to select
+    if (wasClick && !store.getState().viewOnly) pickAt(e.clientX, e.clientY);
   };
 
   const pickAt = (clientX: number, clientY: number) => {
@@ -493,6 +495,7 @@ export function Viewport() {
         if (e.dataTransfer.types.includes('Files')) e.preventDefault();
       }}
       onDrop={async (e) => {
+        if (store.getState().viewOnly) return;
         const f = [...e.dataTransfer.files].find((x) => /\.svg$/i.test(x.name) || x.type === 'image/svg+xml');
         if (!f) return;
         e.preventDefault();
@@ -510,7 +513,9 @@ export function Viewport() {
         ref={canvasRef}
         tabIndex={0}
         role="img"
-        aria-label="3D preview of the shape. Drag to orbit, right-drag or Shift-drag to pan, scroll to zoom. With focus: arrow keys orbit, plus and minus zoom, F frames the shape. Click a shape to select it."
+        aria-label={`3D preview of the shape. Drag to orbit, right-drag or Shift-drag to pan, scroll to zoom. With focus: arrow keys orbit, plus and minus zoom, F frames the shape.${
+          viewOnly ? '' : ' Click a shape to select it.'
+        }`}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -520,8 +525,10 @@ export function Viewport() {
         onDoubleClick={frame}
         data-testid="viewport-canvas"
       />
-      {!measuring && <Gizmo canvasRef={canvasRef} onInteract={() => rendererRef.current?.interact()} />}
-      <MeasureOverlay canvasRef={canvasRef} />
+      {!measuring && !viewOnly && (
+        <Gizmo canvasRef={canvasRef} onInteract={() => rendererRef.current?.interact()} />
+      )}
+      {!viewOnly && <MeasureOverlay canvasRef={canvasRef} />}
 
       <div className="vp-overlay vp-tl" data-tour="add">
         <div className="toolbar" role="toolbar" aria-label="Add a shape">
@@ -741,7 +748,7 @@ export function Viewport() {
       <div className="vp-overlay vp-br">
         {hintVisible && !emptyScene && (
           <span className="hint hide-sm" aria-hidden="true">
-            Drag to orbit · Right-drag to pan · Scroll to zoom · Click a shape to edit it
+            Drag to orbit · Right-drag to pan · Scroll to zoom{viewOnly ? '' : ' · Click a shape to edit it'}
           </span>
         )}
         <div className="toolbar hide-md" role="toolbar" aria-label="Zoom">

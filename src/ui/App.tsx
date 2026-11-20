@@ -6,6 +6,7 @@ import { Inspector } from './inspector/Inspector';
 import { Toasts } from './Toasts';
 import { Tour } from './Tour';
 import { CommandPalette } from './CommandPalette';
+import { ViewerPanel } from './ViewerPanel';
 import { lazy, Suspense } from 'react';
 
 const ExportDialog = lazy(() => import('./dialogs/ExportDialog').then((m) => ({ default: m.ExportDialog })));
@@ -190,6 +191,25 @@ function useShortcuts() {
 }
 
 export function App() {
+  const viewOnly = useEditor((s) => s.viewOnly);
+  return viewOnly ? <ViewerApp /> : <EditorApp />;
+}
+
+/** View-only player for embed links: the 3D view and the shape's Controls. */
+function ViewerApp() {
+  useResolvedTheme();
+  return (
+    <div className="app viewer">
+      <main className="viewer-main" aria-label="3D view">
+        <Viewport />
+      </main>
+      <ViewerPanel />
+      <Toasts />
+    </div>
+  );
+}
+
+function EditorApp() {
   useResolvedTheme();
   useShortcuts();
   const dialog = useEditor((s) => s.dialog);

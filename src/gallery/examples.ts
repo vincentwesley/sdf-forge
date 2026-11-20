@@ -575,6 +575,37 @@ export const EXAMPLES: Example[] = [
     },
   },
   {
+    id: 'gears',
+    title: 'Gear pair',
+    description:
+      'Two involute spur gears that really mesh: same module, centres (20 + 12) × 1 mm ÷ 2 = 16 mm apart. Press Play to turn them; print them and they work.',
+    tags: ['printable', 'learn'],
+    build: () => {
+      const b = new DocBuilder('Gear pair');
+      // 1 mm module (mmPerUnit 10), 20 and 12 teeth: centre distance (20 + 12) × 0.1 / 2 = 1.6
+      const big = b.add(
+        'gear',
+        { teeth: 20, module: 0.1, bore: 0.25, color: [0.95, 0.62, 0.25] },
+        undefined,
+        'Big gear',
+      );
+      // the small gear starts turned half a tooth (180° / 12) so a tooth sits in a gap
+      const small = b.add(
+        'gear',
+        { teeth: 12, module: 0.1, bore: 0.15, offset: [1.6, 0], angle: 15, color: [0.35, 0.65, 0.95] },
+        undefined,
+        'Small gear',
+      );
+      const both = b.add('union', { smooth: 0 }, [big, small]);
+      const solid = b.add('extrude', { height: 0.5, rounding: 0.03 }, [both]);
+      b.output(solid);
+      // turning the big gear by 36° turns the small one by 36 × 20 / 12 = 60° the other way
+      b.pin(big, 'angle', 'Big gear turn', { from: 0, to: 36, seconds: 3 });
+      b.pin(small, 'angle', 'Small gear turn', { from: 15, to: -45, seconds: 3 });
+      return b.done();
+    },
+  },
+  {
     id: 'gem',
     title: 'Cut gem',
     description:

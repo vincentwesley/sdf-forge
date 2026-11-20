@@ -1690,3 +1690,82 @@ dialog.modal::backdrop {
 .group-setting + .group-setting {
   margin-top: 4px;
 }
+
+.warn-text {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------- view-only player (embeds) */
+.app.viewer {
+  grid-template-rows: minmax(0, 1fr);
+  position: relative;
+}
+.viewer-main {
+  display: grid;
+  min-height: 0;
+}
+.viewer .vp-tl,
+.viewer .vp-bl {
+  display: none !important;
+}
+.viewer-panel {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: min(290px, calc(100% - 20px));
+  max-height: calc(100% - 70px);
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 18px rgb(0 0 0 / 0.25);
+  z-index: 5;
+}
+.viewer-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.viewer-head h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 15px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.viewer-note {
+  font-size: 11px;
+  margin: 6px 0;
+}
+.viewer-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.viewer-credit {
+  font-size: 11px;
+  color: var(--text-2);
+}
+a.btn {
+  text-decoration: none;
+}
+.code-small {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  resize: vertical;
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 600px) {
+  .viewer-panel {
+    top: auto;
+    bottom: 10px;
+    max-height: 55%;
+  }
+}

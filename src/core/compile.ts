@@ -54,6 +54,8 @@ export const MAX_TEXTURES = 4;
 export interface CompileOptions {
   /** compile this node instead of the Output node ("view this node") */
   root?: string;
+  /** GLSL for each distance grid's `sfTex<slot>` (default: sample a texture uniform) */
+  textureGlsl?: (slot: number, grid: TextGrid) => string;
 }
 
 const SEL_SLOT = 0; // P[0] holds the selected node index
@@ -318,7 +320,7 @@ export function compile(doc: SdfDoc, opts: CompileOptions = {}): Compiled {
     // the material comes out through a global so the tree is evaluated once
     result: ([c, s, m]) => `vec4(${c}, (gMat = ${m}, ${s}))`,
   });
-  const texGlsl = textures.map((t, i) => glslTextureHelper(i, t)).join('\n');
+  const texGlsl = textures.map((t, i) => (opts.textureGlsl ?? glslTextureHelper)(i, t)).join('\n');
   const glsl = `${usesNoise ? GLSL_NOISE : ''}\n${texGlsl}\n${mapFn}\n// surface material of the last mapColor() call: roughness, metallic, glow\nvec3 gMat;\n${colFn}`;
 
   const xyz = [['x', 'y', 'z']];
