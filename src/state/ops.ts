@@ -100,7 +100,21 @@ export function removeNodes(doc: SdfDoc, ids: string[]): SdfDoc {
     nodes: doc.nodes.filter((n) => !del.has(n.id)),
     edges,
     pinned: doc.pinned.filter((p) => !del.has(p.node)),
+    ...pruneGroups(doc, del),
   };
+}
+
+/** Groups after removing nodes: members and settings of deleted nodes go, empty groups go. */
+function pruneGroups(doc: SdfDoc, del: Set<string>): Pick<SdfDoc, 'groups'> {
+  if (!doc.groups) return {};
+  const groups = doc.groups
+    .map((g) => ({
+      ...g,
+      members: g.members.filter((m) => !del.has(m)),
+      exposed: g.exposed.filter((s) => !del.has(s.node)),
+    }))
+    .filter((g) => g.members.length);
+  return { groups: groups.length ? groups : undefined };
 }
 
 /** Duplicate nodes (and the edges between them). Returns the new doc and the id map. */

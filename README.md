@@ -39,6 +39,8 @@ Made by **Vin** · **Vin's Atelier**.
   - **USDZ** for AR on iPhone and iPad: open it to see the model in your room at real size, with its materials.
   - **PNG** renders up to 4K (transparent background optional) and **turntable videos** (MP4 or WebM).
   - **Shader code** — a complete Shadertoy shader or just the GLSL distance function (not yet for shapes with text).
+- **Tidy big graphs into groups.** Select nodes and press Ctrl+G to fold them into one card with its own inputs and
+  the settings you choose to show. Save a group to *My parts* and drop it into any other shape.
 - **Draw your own outlines.** The Profile node is a point editor: drag points, add them with a click, and make each
   one a sharp corner or a smooth curve. Spin it with Revolve for vases, bottles and chess pieces, or extrude it for
   brackets and plates. Works with mouse, touch and keyboard.

@@ -1,3 +1,4 @@
+import { type NodeGroup, sanitizeGroups } from './groups';
 import type { MaterialStyle } from '../material';
 import { defaultParams, getDef, paramsOf } from '../nodes/registry';
 import { sanitizePoints } from '../profile';
@@ -46,6 +47,8 @@ export interface SdfDoc {
   edges: GEdge[];
   pinned: Pinned[];
   settings: DocSettings;
+  /** node groups (see src/core/graph/groups.ts); absent when there are none */
+  groups?: NodeGroup[];
 }
 
 export const DEFAULT_SETTINGS: DocSettings = { mmPerUnit: 10, material: 'clay' };
@@ -268,7 +271,9 @@ export function normalizeDoc(raw: unknown): SdfDoc {
       paramsOf(nodes.find((n) => n.id === p.node)!.type).some((x) => x.key === p.param),
   );
   const s = (d.settings ?? {}) as Partial<DocSettings>;
+  const groups = sanitizeGroups(d.groups, nodes);
   return {
+    ...(groups.length ? { groups } : {}),
     version: 1,
     title: typeof d.title === 'string' && d.title.trim() ? d.title.slice(0, 80) : 'Untitled shape',
     nodes,

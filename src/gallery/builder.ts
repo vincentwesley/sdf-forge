@@ -4,6 +4,7 @@ import { getDef } from '../core/nodes/registry';
 import type { MaterialStyle } from '../core/graph/doc';
 import type { PinAnim } from '../core/animation';
 import type { ParamValue } from '../core/nodes/types';
+import type { NodeGroup } from '../core/graph/groups';
 
 type Inputs = string[] | Record<string, string | string[]>;
 
@@ -40,6 +41,18 @@ export class DocBuilder {
   }
   pin(node: string, param: string, label?: string, anim?: PinAnim) {
     this.doc.pinned.push({ node, param, ...(label ? { label } : {}), ...(anim ? { anim } : {}) });
+    return this;
+  }
+  /** Group nodes into one collapsible card that shows the given settings ([node, param, label?]). */
+  group(name: string, members: string[], settings: [string, string, string?][] = [], collapsed = true) {
+    const g: NodeGroup = {
+      id: `g${(this.doc.groups ?? []).length}`,
+      name,
+      members,
+      collapsed,
+      exposed: settings.map(([node, param, label]) => ({ node, param, ...(label ? { label } : {}) })),
+    };
+    this.doc.groups = [...(this.doc.groups ?? []), g];
     return this;
   }
   done(): SdfDoc {

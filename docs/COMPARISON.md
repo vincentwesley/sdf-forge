@@ -14,7 +14,8 @@ own way: free, in the browser, private, and printable by default.
 | **Spline** | Web 3D design for interactive scenes, materials and embeds | Free tier; paid export (USDZ is Pro) | Browser |
 | **Fusion 360 / Shapr3D** | Professional parametric CAD | Subscriptions | Desktop / iPad |
 | **Substance 3D Modeler** | SDF clay sculpting in VR or on desktop | Subscription | Windows / Quest |
-| **Blender** | Everything 3D | Free, open source | Desktop |
+| **Blender** | Everything 3D | Node groups / reusable parts | — | — | 🟡 groups | ✅ components | ✅ components | **✅ Collapsible groups with their own settings; My parts library** |
+| Free, open source | Desktop |
 
 ## Feature matrix
 
@@ -79,10 +80,12 @@ own way: free, in the browser, private, and printable by default.
   where shapes melt together, like Womp's goop. GLB and USDZ exports carry them as PBR materials, so a model opened
   in Blender, a game engine or AR Quick Look looks the way it did in SDF Forge. New example: *Desk lamp*.
 
+* **Node groups** (Blender node groups, Spline/Fusion components): fold part of a graph into one card with its own
+  inputs and a few chosen settings, then duplicate it or save it to *My parts* to reuse in other shapes.
+
 ## Planned next, most valuable first
 
-1. **Node groups**: collapse part of a graph into one reusable node with its own settings.
-2. **Shadertoy export for Text and SVG shapes** (bake the distance grid into the shader).
+1. **Shadertoy export for Text and SVG shapes** (bake the distance grid into the shader).
 
 ## Deliberately not planned
 

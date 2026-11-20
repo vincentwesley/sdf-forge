@@ -30,6 +30,7 @@ import {
   useEditor,
 } from '../state/store';
 import { useResolvedTheme } from './theme';
+import { duplicateGroup, groupSelection, ungroupSelection } from '../state/groups';
 import type { ViewMode } from '../render/renderer';
 
 function Splitter() {
@@ -147,9 +148,16 @@ function useShortcuts() {
         void pasteNodes();
         return;
       }
+      if (mod && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        if (e.shiftKey) ungroupSelection();
+        else if (s.selection.length) groupSelection();
+        return;
+      }
       if (mod && e.key.toLowerCase() === 'd') {
         e.preventDefault();
-        if (s.selection.length) duplicate(s.selection);
+        if (s.activeGroup) duplicateGroup(s.activeGroup);
+        else if (s.selection.length) duplicate(s.selection);
         return;
       }
       if (mod || e.altKey) return;

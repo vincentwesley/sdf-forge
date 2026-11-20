@@ -16,6 +16,8 @@ type Packed = {
   /** pinned: node, param, label ('' = default), animation [from, to, seconds] */
   p?: [string, string, string?, [number, number, number]?][];
   s?: { u?: number; m?: string };
+  /** groups: name, member ids, collapsed (1/0), exposed settings [node, param, label?] */
+  g?: [string, string[], number, [string, string, string?][]][];
 };
 
 const round = (v: number) => Math.round(v * 1e5) / 1e5;
@@ -46,6 +48,17 @@ export function pack(doc: SdfDoc): Packed {
       if (p.anim) row.push([round(p.anim.from), round(p.anim.to), round(p.anim.seconds)]);
       return row;
     });
+  if (doc.groups?.length)
+    out.g = doc.groups.map((g) => [
+      g.name,
+      g.members.map((m) => idMap.get(m)!),
+      g.collapsed ? 1 : 0,
+      g.exposed.map((s) => {
+        const row: [string, string, string?] = [idMap.get(s.node)!, s.param];
+        if (s.label) row.push(s.label);
+        return row;
+      }),
+    ]);
   if (doc.settings.mmPerUnit !== 10 || doc.settings.material !== 'clay')
     out.s = { u: doc.settings.mmPerUnit, m: doc.settings.material };
   return out;
@@ -65,6 +78,17 @@ export function unpack(p: Packed): SdfDoc {
       anim: Array.isArray(anim) ? { from: anim[0], to: anim[1], seconds: anim[2] } : undefined,
     })),
     settings: { mmPerUnit: p.s?.u ?? 10, material: (p.s?.m as SdfDoc['settings']['material']) ?? 'clay' },
+    groups: Array.isArray(p.g)
+      ? p.g.map((row, i) => ({
+          id: `g${i}`,
+          name: row?.[0],
+          members: row?.[1],
+          collapsed: row?.[2] !== 0,
+          exposed: Array.isArray(row?.[3])
+            ? row[3].map((s) => ({ node: s?.[0], param: s?.[1], label: s?.[2] }))
+            : [],
+        }))
+      : undefined,
   });
 }
 

@@ -1606,3 +1606,87 @@ dialog.modal::backdrop {
 .svg-preview path {
   fill: var(--accent);
 }
+
+/* ---------------------------------------------------------------- groups */
+.group-card {
+  border-style: solid;
+  border-width: 1px 1px 1px 4px;
+  border-left-color: var(--accent);
+}
+.group-head {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.group-port {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sdf-node-row.group-out {
+  justify-content: flex-end;
+}
+.group-settings {
+  margin: 2px 9px 0;
+  display: grid;
+  gap: 1px;
+  font-size: 11px;
+}
+.group-settings > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.group-settings dt {
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.group-settings dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.group-frame {
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.group-frame.selected {
+  border-style: solid;
+  border-color: var(--accent);
+}
+.group-frame-head {
+  pointer-events: all;
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px;
+  padding: 3px 4px 3px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.group-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  flex: none;
+}
+.group-members {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.group-setting + .group-setting {
+  margin-top: 4px;
+}

@@ -526,7 +526,7 @@ export const EXAMPLES: Example[] = [
     id: 'lamp',
     title: 'Desk lamp',
     description:
-      'Per-shape materials: a brushed metal stand, a glossy enamel shade and a glowing bulb. Where the smooth union blends parts, their materials blend too.',
+      'Per-shape materials: a brushed metal stand, a glossy enamel shade and a glowing bulb. Where the smooth union blends parts, their materials blend too. The shade is a node group: one card with its own settings.',
     tags: ['art', 'learn'],
     build: () => {
       const b = new DocBuilder('Desk lamp');
@@ -561,6 +561,16 @@ export const EXAMPLES: Example[] = [
       );
       const u = b.add('union', { smooth: 0.08 }, [base, stem, shadeCut, bulb]);
       b.output(u).pin(u, 'smooth', 'Blend');
+      // the shade's three steps fold into one card with just the settings worth changing
+      b.group(
+        'Lampshade',
+        [shadeOuter, shade, shadeCut],
+        [
+          [shadeOuter, 'bottom', 'Width'],
+          [shade, 'thickness', 'Wall'],
+          [shadeOuter, 'material', 'Finish'],
+        ],
+      );
       return b.done();
     },
   },
