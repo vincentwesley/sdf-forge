@@ -53,15 +53,48 @@ browser download is needed. A Python venv with trimesh lives in `.venv/` (git-ig
 
 1. The site is live and deploys on every push to `main`. After a merge, `node scripts/check-live.mjs` confirms it.
 2. Next features, most valuable first (details and reasons in `docs/COMPARISON.md` → "Planned next"):
-   per-shape materials (e.g. a metal handle on a clay mug, like Womp), node groups / sub-graphs, Shadertoy export
-   for text, a WGSL/WebGPU back end from the same IR. Deliberately not planned: mesh import, freehand sculpting,
-   path tracing (reasons in COMPARISON.md).
+   a Thread node (printable screws and nuts), linked group instances, glow bloom, more OFL fonts for Text, named
+   versions in the browser, then a WGSL/WebGPU back end from the same IR. Deliberately not planned: mesh import,
+   freehand sculpting, path tracing (reasons in COMPARISON.md).
 3. After a visible UI change, regenerate the PDF guide (`npm run build && npm run guide`) so its screenshots stay current,
    and check the pages (`pdftoppm -r 60 -png public/guide/sdf-forge-guide.pdf /tmp/p`).
 4. Each change: `npm run acceptance` (everything) or at least lint + typecheck + unit + build, then push to the
    working branch, open a PR into `main` and merge once CI is green.
 
 ---
+
+## Session 4 (2026-11-20): materials, groups, embeds, gears
+
+Built through PRs #15–#17. CI was green on each (lint, types, unit, build, mesh validation, full Playwright), each was
+merged, then deployed and checked live with `node scripts/check-live.mjs`.
+* **Per-shape materials** (#15): Same as scene / Clay / Glossy / Metal / Glow per shape.
+  * Blended across smooth unions with the colour's weight. They are uniforms, so changing one never recompiles.
+  * GPU/CPU agreement now compares materials too.
+  * Exports group triangles by (colour, material):
+    * GLB: one primitive + PBR material each, with emission for glow.
+    * USDZ: a GeomSubset with `metallic` / `roughness` / `emissiveColor`.
+    * 3MF: filaments named after their material. PBR display properties were tried and dropped, because lib3mf
+      strict rejects them (DECISIONS 22).
+  * CI rebuilds multi-primitive GLBs as one exact mesh for the watertight checks.
+  * New *Desk lamp* example.
+  * Fixed on the way: on phones the Properties tab was 16 px wider than the screen; Ctrl+Z now works while a
+    dropdown has focus.
+* **Node groups and My parts** (#16):
+  * Ctrl+G folds nodes into one card with inputs, results and up to eight exposed settings. Expand, rename,
+    duplicate (Ctrl+D), ungroup (Ctrl+Shift+G), delete.
+  * Save a group to *My parts* (localStorage) and add it to any shape from the Add node menu.
+  * Groups are an organising layer, so compiled code, picking, undo and exports are unchanged (DECISIONS 23).
+* **Shadertoy export for Text/SVG shapes** (#17): the grids are baked as 16-bit const arrays (DECISIONS 24).
+* **Gear node** (#17): true involute spur gears that mesh, with a *Gear pair* example (DECISIONS 25).
+* **Embed on a website** (#17): `#…&view=1` view-only player with Controls; iframe code in Share (DECISIONS 26).
+* **Printer fit check** (#17): in the export dialog, with scale to fit (DECISIONS 27).
+* Research for this round is in `docs/COMPARISON.md`: Spline viewer/embeds, Fusion gears/threads, printer build volumes.
+* Totals now:
+  * 37 node types, 21 examples
+  * 209 unit tests, 77 Playwright tests
+  * 26 shapes × 5 formats validated (STL, 3MF, GLB, OBJ with trimesh/lib3mf; GLB with Khronos; USDZ with OpenUSD + ARKit)
+* Not done: the "Planned next" items above. Linked group instances were left out on purpose (DECISIONS 23). Nothing
+  needs Vin.
 
 ## Session 3 (2026-11-19/20): features from other 3D tools
 

@@ -3,6 +3,7 @@ import { sdBox } from './lib';
 import { MAX_TEXT, fontReady, textGrid } from '../text';
 import { VASE_POINTS, profilePolygon, selfIntersects } from '../profile';
 import { SAMPLE_OUTLINE, svgGrid } from '../svg';
+import { GEAR_VERTS, gearRadii, halfToothOutline } from '../gear';
 
 const IQ2 = 'Inigo Quilez, iquilezles.org/articles/distfunctions2d (MIT)';
 const flat = (x: number, y: number) => ({
@@ -157,7 +158,102 @@ export const star: NodeDef = {
   credit: IQ2,
 };
 
-export const SHAPES_2D = [circle, rect, polygon, star];
+export const gear: NodeDef = {
+  type: 'gear',
+  label: 'Gear',
+  category: 'profile',
+  summary: 'A spur gear outline with true involute teeth.',
+  help:
+    'An involute spur gear (ISO basic rack: tooth height 2.25 × module). Two gears mesh when they have the same Module and pressure angle and their centres are (teeth₁ + teeth₂) × module ÷ 2 apart. "Module" is the size of the teeth: pitch diameter ÷ teeth. Extrude it to make a printable gear; for printing, 1 mm module or more works well. The bore is the hole for the axle.' +
+    PROFILE_NOTE,
+  keywords: ['gear', 'cog', 'sprocket', 'involute', 'spur', 'mechanism', 'wheel', '2d'],
+  inputs: [],
+  output: 'sdf2',
+  transform: 2,
+  colored: true,
+  exactness: 'exact',
+  params: [
+    { key: 'teeth', label: 'Teeth', kind: 'int', default: 20, min: 6, max: 120, softMax: 60 },
+    {
+      key: 'module',
+      label: 'Module',
+      kind: 'float',
+      unit: 'length',
+      default: 0.1,
+      min: 0.005,
+      softMax: 0.4,
+      help: 'Tooth size: pitch diameter ÷ number of teeth. Gears that mesh share the same module.',
+    },
+    {
+      key: 'pressure',
+      label: 'Pressure angle',
+      kind: 'float',
+      unit: 'angle',
+      default: 20,
+      min: 14,
+      max: 30,
+      step: 0.5,
+      help: 'The tooth flank angle. 20° is the standard; meshing gears must use the same value.',
+    },
+    { key: 'bore', label: 'Bore radius', kind: 'float', unit: 'length', default: 0.2, min: 0, softMax: 1 },
+  ],
+  derive: (pr) => {
+    const spec = { teeth: pr.teeth as number, module: pr.module as number, pressure: pr.pressure as number };
+    const { z } = gearRadii(spec);
+    const out: Record<string, number | number[]> = {
+      half: Math.PI / z,
+      sector: (2 * Math.PI) / z,
+      bore: Math.max(0, pr.bore as number),
+    };
+    halfToothOutline(spec).forEach((v, i) => (out[`v${i}`] = v));
+    return out;
+  },
+  emit: ({ ir, p, derived }) => {
+    // fold into the half-tooth wedge 0 ≤ θ ≤ π/z (the gear's mirror symmetries keep this exact)
+    const half = derived('half');
+    const a = ir.abs(ir.sub(ir.mod(ir.add(ir.atan2(ir.y(p), ir.x(p)), half), derived('sector')), half));
+    const r = ir.length(p);
+    const q = ir.vec2(ir.mul(r, ir.cos(a)), ir.mul(r, ir.sin(a)));
+    const v = Array.from({ length: GEAR_VERTS }, (_, i) => derived(`v${i}`));
+    // distance to the outline; inside/outside from the closed wedge polygon (origin + outline)
+    const poly = [ir.vec2(0, 0), ...v];
+    const qy = ir.y(q);
+    let d2 = ir.dot2(ir.sub(q, v[0]));
+    let s: ReturnType<typeof ir.c> = ir.c(1);
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i, i++) {
+      const e = ir.sub(poly[j], poly[i]);
+      const w = ir.sub(q, poly[i]);
+      // the two wedge sides are symmetry lines, not surface: only outline edges count for distance
+      if (i >= 2) {
+        const h = ir.clamp(ir.div(ir.dot(w, e), ir.max(ir.dot(e, e), 1e-12)), 0, 1);
+        d2 = ir.min(d2, ir.dot2(ir.sub(w, ir.mul(e, h))));
+      }
+      const c1 = ir.select(ir.lt(qy, ir.y(poly[i])), 0, 1);
+      const c2 = ir.select(ir.lt(qy, ir.y(poly[j])), 1, 0);
+      const c3 = ir.select(ir.gt(ir.mul(ir.x(e), ir.y(w)), ir.mul(ir.y(e), ir.x(w))), 1, 0);
+      const all = ir.add(ir.add(c1, c2), c3);
+      s = ir.select(ir.gt(ir.abs(ir.sub(all, 1.5)), 1), ir.neg(s), s);
+    }
+    const d = ir.mul(s, ir.sqrt(d2));
+    const bore = derived('bore');
+    return {
+      d: ir.select(ir.lt(0, bore), ir.max(d, ir.sub(bore, r)), d),
+      col: ir.c(0),
+      mat: ir.c(0),
+    };
+  },
+  bounds: ({ params }) => {
+    const { ra } = gearRadii({
+      teeth: params.teeth as number,
+      module: params.module as number,
+      pressure: params.pressure as number,
+    });
+    return flat(ra, ra);
+  },
+  credit: 'Involute gear geometry: ISO 53 basic rack; polygon distance after Inigo Quilez (MIT)',
+};
+
+export const SHAPES_2D = [circle, rect, polygon, star, gear];
 
 export const text: NodeDef = {
   type: 'text',

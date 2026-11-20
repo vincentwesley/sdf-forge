@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Check, Copy, Download, Upload } from 'lucide-react';
 import { Modal } from './Modal';
 import { loadDoc, toast, useEditor } from '../../state/store';
-import { shareUrl } from '../../core/share';
+import { embedCode, shareUrl, viewUrl } from '../../core/share';
 import { downloadBlob, safeFilename } from '../../workers/meshClient';
 import { normalizeDoc } from '../../core/graph/doc';
 
@@ -10,9 +10,12 @@ export function ShareDialog() {
   const doc = useEditor((s) => s.doc);
   const [url, setUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [view, setView] = useState('');
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
   useEffect(() => {
     let alive = true;
     shareUrl(doc, location.href.split('#')[0]).then((u) => alive && setUrl(u));
+    viewUrl(doc, location.href.split('#')[0]).then((u) => alive && setView(u));
     return () => {
       alive = false;
     };
@@ -64,6 +67,45 @@ export function ShareDialog() {
       </div>
       <p className="muted" style={{ fontSize: 12 }}>
         {url ? `${url.length.toLocaleString()} characters` : 'Preparing link…'}
+      </p>
+      <h3 style={{ fontSize: 13, margin: '18px 0 8px' }}>Embed on a website</h3>
+      <p className="explain" style={{ marginTop: 0 }}>
+        A view-only player: visitors can turn the shape and try its Controls, then open their own copy. Paste
+        this into a page builder (WordPress, Notion, Webflow…) or any HTML.
+      </p>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <textarea
+          className="text-input code-small"
+          readOnly
+          rows={3}
+          value={view ? embedCode(view, doc.title) : ''}
+          aria-label="Embed code"
+          onFocus={(e) => e.target.select()}
+          data-testid="embed-code"
+        />
+        <button
+          type="button"
+          className="btn"
+          disabled={!view}
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(embedCode(view, doc.title));
+              setCopiedEmbed(true);
+              setTimeout(() => setCopiedEmbed(false), 1800);
+            } catch {
+              toast('Could not copy automatically — select the code and copy it.', 'error');
+            }
+          }}
+        >
+          {copiedEmbed ? <Check size={15} /> : <Copy size={15} />} {copiedEmbed ? 'Copied' : 'Copy'}
+        </button>
+      </div>
+      <p className="muted" style={{ fontSize: 12 }}>
+        Or{' '}
+        <a href={view || undefined} target="_blank" rel="noopener" data-testid="view-link">
+          open the view-only link
+        </a>
+        .
       </p>
       <h3 style={{ fontSize: 13, margin: '18px 0 8px' }}>Save as a file</h3>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
