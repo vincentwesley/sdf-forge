@@ -42,6 +42,8 @@ export interface EditorState {
   mergeKey: string | null;
   mergeTime: number;
   selection: string[];
+  /** the group whose card was selected (its members are the selection) */
+  activeGroup: string | null;
   viewRoot: string | null;
   viewMode: ViewMode;
   grid: boolean;
@@ -102,6 +104,7 @@ export const store = createStore<EditorState>(() => ({
   mergeKey: null,
   mergeTime: 0,
   selection: [],
+  activeGroup: null,
   viewRoot: null,
   viewMode: 'shaded',
   grid: true,
@@ -259,8 +262,9 @@ export function toast(message: string, kind: Toast['kind'] = 'info', ms = 3500) 
 
 export function select(ids: string[]) {
   const s = get();
-  if (ids.length === s.selection.length && ids.every((id, i) => id === s.selection[i])) return;
-  set({ selection: ids });
+  if (ids.length === s.selection.length && ids.every((id, i) => id === s.selection[i]) && !s.activeGroup)
+    return;
+  set({ selection: ids, activeGroup: null });
 }
 
 // ---------------------------------------------------------------------------

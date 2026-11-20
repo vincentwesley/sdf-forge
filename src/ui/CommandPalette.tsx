@@ -18,6 +18,7 @@ import {
 import { getScene } from '../state/scene';
 import { surpriseMe } from '../state/surprise';
 import { startTour } from './Tour';
+import { groupSelection, ungroupSelection } from '../state/groups';
 import { openExample } from '../gallery/open';
 
 interface Cmd {
@@ -50,6 +51,8 @@ function commands(): Cmd[] {
     { id: 'new', label: 'New empty shape', group: 'File', run: newDocument },
     { id: 'surprise', label: 'Surprise me (shuffle settings)', group: 'Edit', run: () => surpriseMe() },
     { id: 'tidy', label: 'Tidy the graph', group: 'Graph', run: tidy },
+    { id: 'group', label: 'Group selected nodes', group: 'Graph', run: () => groupSelection() },
+    { id: 'ungroup', label: 'Ungroup', group: 'Graph', run: ungroupSelection },
     {
       id: 'frame',
       label: 'Frame the shape',

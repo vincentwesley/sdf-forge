@@ -5,6 +5,11 @@ import type { NodeDef } from '../../core/nodes/types';
 import { NodeIcon } from '../meta';
 import { actions, addNodeAt, useEditor } from '../../state/store';
 import { canConnect, makeNode } from '../../core/graph/doc';
+import type { Part } from '../../core/graph/groups';
+import { addPart, deletePart, loadParts } from '../../state/groups';
+import { Group } from 'lucide-react';
+
+type Item = { kind: 'node'; def: NodeDef; key: string } | { kind: 'part'; part: Part; key: string };
 
 /** Relevance of a node for a search: 0 = no match, higher is better. */
 function score(def: NodeDef, q: string): number {
@@ -20,6 +25,13 @@ function score(def: NodeDef, q: string): number {
   return 0;
 }
 
+function partScore(name: string, q: string): number {
+  if (!q) return 1;
+  const n = name.toLowerCase(),
+    s = q.toLowerCase().trim();
+  return n === s ? 100 : n.startsWith(s) ? 80 : n.includes(s) ? 50 : 0;
+}
+
 /** Searchable "add node" popup. When opened from a dragged wire it lists only compatible nodes. */
 export function AddNodeMenu() {
   const menu = useEditor((s) => s.addMenu);
@@ -27,6 +39,13 @@ export function AddNodeMenu() {
   const [q, setQ] = useState('');
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
+  const [parts, setParts] = useState<Part[]>([]);
+  useEffect(() => {
+    const load = () => setParts(loadParts());
+    load();
+    window.addEventListener('sdf-forge:parts', load);
+    return () => window.removeEventListener('sdf-forge:parts', load);
+  }, [menu]);
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,8 +72,19 @@ export function AddNodeMenu() {
       }),
     );
     // with a query, best matches first (stable within equal scores)
-    return q ? [...compatible].sort((a, b) => score(b, q) - score(a, q)) : compatible;
-  }, [menu, q, doc]);
+    const scored: { it: Item; s: number }[] = compatible.map((def) => ({
+      it: { kind: 'node', def, key: def.type },
+      s: score(def, q),
+    }));
+    // saved parts (not when connecting a wire: a part has no single socket to wire),
+    // ranked by name like node labels
+    if (!from)
+      parts.forEach((part, i) => {
+        const s = partScore(part.name, q);
+        if (s > 0) scored.push({ it: { kind: 'part', part, key: `part-${i}` }, s });
+      });
+    return (q ? [...scored].sort((a, b) => b.s - a.s) : scored).map((x) => x.it);
+  }, [menu, q, doc, parts]);
 
   useEffect(() => {
     if (!menu) return;
@@ -67,8 +97,9 @@ export function AddNodeMenu() {
 
   if (!menu) return null;
   const close = () => actions.set({ addMenu: null });
-  const pick = (d: NodeDef) => {
-    addNodeAt(d.type, menu.flowX, menu.flowY, menu.from);
+  const pick = (it: Item) => {
+    if (it.kind === 'node') addNodeAt(it.def.type, menu.flowX, menu.flowY, menu.from);
+    else addPart(it.part, menu.flowX, menu.flowY);
     actions.set({ narrowTab: 'props' });
     close();
   };
@@ -92,7 +123,7 @@ export function AddNodeMenu() {
         role="combobox"
         aria-expanded="true"
         aria-controls="add-node-list"
-        aria-activedescendant={list[active] ? `add-${list[active].type}` : undefined}
+        aria-activedescendant={list[active] ? `add-${list[active].key}` : undefined}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -108,6 +139,10 @@ export function AddNodeMenu() {
           } else if (e.key === 'Enter') {
             e.preventDefault();
             if (list[active]) pick(list[active]);
+          } else if (e.key === 'Delete' && e.shiftKey && list[active]?.kind === 'part') {
+            e.preventDefault();
+            const it = list[active];
+            if (it.kind === 'part') deletePart(it.part.name);
           } else if (e.key === 'Escape') {
             e.preventDefault();
             close();
@@ -116,26 +151,47 @@ export function AddNodeMenu() {
       />
       <div id="add-node-list" role="listbox" aria-label="Nodes">
         {list.length === 0 && <div className="menu-section">No matching nodes</div>}
-        {list.map((d, i) => {
-          const head = !q && d.category !== lastCat ? CATEGORY_INFO[d.category].label : null;
-          lastCat = d.category;
+        {list.map((it, i) => {
+          const cat = it.kind === 'node' ? it.def.category : 'parts';
+          const head =
+            cat !== lastCat && (!q || it.kind === 'part')
+              ? it.kind === 'node'
+                ? CATEGORY_INFO[it.def.category].label
+                : 'My parts'
+              : null;
+          lastCat = cat;
           return (
-            <div key={d.type}>
+            <div key={it.key}>
               {head && <div className="menu-section">{head}</div>}
               <div
-                id={`add-${d.type}`}
+                id={`add-${it.key}`}
                 role="option"
                 aria-selected={i === active}
                 className="menu-item"
                 data-active={i === active}
                 onPointerMove={() => setActive(i)}
-                onClick={() => pick(d)}
+                onClick={() => pick(it)}
               >
-                <NodeIcon type={d.type} category={d.category} size={14} />
-                <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <span>{d.label}</span>
-                  <span className="desc">{d.summary}</span>
-                </span>
+                {it.kind === 'node' ? (
+                  <>
+                    <NodeIcon type={it.def.type} category={it.def.category} size={14} />
+                    <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                      <span>{it.def.label}</span>
+                      <span className="desc">{it.def.summary}</span>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Group size={14} aria-hidden="true" />
+                    <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                      <span>{it.part.name}</span>
+                      <span className="desc">
+                        Saved group · {it.part.nodes.length} node{it.part.nodes.length === 1 ? '' : 's'}
+                        {i === active ? ' · Shift+Del removes it' : ''}
+                      </span>
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           );

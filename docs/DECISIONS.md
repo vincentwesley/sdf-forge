@@ -113,3 +113,15 @@ Ideas considered, with verdicts. "Build" items are in scope; "Later" are recorde
     `emissiveColor`, 3MF a filament named after its material. 3MF's PBR display properties
     (`<m:pbmetallicdisplayproperties>`) were tried and dropped: lib3mf rejects them in strict mode and slicers ignore
     them. OBJ and STL carry no materials.
+23. **Node groups are an organising layer over the graph, not compiled sub-graph definitions** (vs. Blender-style
+    group definitions with linked instances, or a "group" node type whose inputs and settings depend on the
+    document). A group records its name, members, collapsed state and up to eight exposed settings; its members
+    stay ordinary nodes. So the compiler, picking, the gizmo, undo, animation, exports and share links needed no
+    changes, and a test checks that grouping leaves the generated code identical. Collapsing only changes drawing:
+    members are hidden behind one card, wires crossing the boundary are re-routed to it under their own ids
+    (handles named `node|input`), so connecting, reconnecting and deleting wires work unchanged. A group's inputs
+    are its members' sockets that are open or fed from outside; its results are members whose output leaves the
+    group or is unused. Reuse comes from Duplicate (copies stay grouped, settings remapped) and *My parts*, a library
+    in localStorage that inserts fresh copies with new ids into any shape; parts from storage are cleaned like
+    untrusted documents. Linked instances (edit one, all update) are left for later: they need per-instance
+    parameter slots in the compiler and a way to show which copies are linked, and copies cover the common case.

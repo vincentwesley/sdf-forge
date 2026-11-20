@@ -14,6 +14,10 @@ import {
 import '@xyflow/react/dist/base.css';
 import { LayoutGrid, Maximize, Plus } from 'lucide-react';
 import { NodeView, type SdfFlowNode } from './NodeView';
+import { GroupCard, GroupFrame, type GroupCardNode, type GroupFrameNode } from './GroupView';
+import { groupIdOf, groupView, isGroupNodeId, realEnd } from './groupLayout';
+import { moveGroupBy, selectGroup } from '../../state/groups';
+import { groupsOf } from '../../core/graph/groups';
 import { AddNodeMenu } from './AddNodeMenu';
 import { nodeSummary } from './summary';
 import {
@@ -34,19 +38,35 @@ import { getDef } from '../../core/nodes/registry';
 import { getScene } from '../../state/scene';
 import { useResolvedTheme } from '../theme';
 
-const nodeTypes = { sdf: NodeView };
+const nodeTypes = { sdf: NodeView, groupCard: GroupCard, groupFrame: GroupFrame };
+type FlowNode = SdfFlowNode | GroupCardNode | GroupFrameNode;
 
 function Flow() {
   const doc = useEditor((s) => s.doc);
   const selection = useEditor((s) => s.selection);
   const viewRoot = useEditor((s) => s.viewRoot);
+  const activeGroup = useEditor((s) => s.activeGroup);
   const frameRequest = useEditor((s) => s.frameRequest);
   const issues = useEditor((s) => getScene(s.doc, s.viewRoot, s.selection[0] ?? null).compiled.issues);
   const theme = useResolvedTheme();
   const rf = useReactFlow();
   const wrap = useRef<HTMLDivElement>(null);
 
-  const nodes: SdfFlowNode[] = useMemo(() => {
+  const view = useMemo(() => {
+    const dims = resolveDims(doc);
+    const reach = new Set<string>();
+    const out = doc.nodes.find((n) => n.type === 'output');
+    const stack = out ? [out.id] : [];
+    while (stack.length) {
+      const id = stack.pop()!;
+      if (reach.has(id)) continue;
+      reach.add(id);
+      for (const e of doc.edges) if (e.target === id) stack.push(e.source);
+    }
+    return groupView(doc, dims, reach, activeGroup);
+  }, [doc, activeGroup]);
+
+  const sdfNodes: SdfFlowNode[] = useMemo(() => {
     const dims = resolveDims(doc);
     const connected = new Set(doc.edges.flatMap((e) => [`${e.target}:${e.input}`, `${e.source}:out`]));
     const reach = new Set<string>();
@@ -58,56 +78,59 @@ function Flow() {
       reach.add(id);
       for (const e of doc.edges) if (e.target === id) stack.push(e.source);
     }
-    return doc.nodes.map((n) => {
-      const def = getDef(n.type)!;
-      const nd: Record<string, 2 | 3 | null> = { out: dims.get(n.id) ?? null };
-      for (const inp of def.inputs) {
-        const e = doc.edges.find((x) => x.target === n.id && x.input === inp.key);
-        nd[inp.key] =
-          inp.type === 'sdf2'
-            ? 2
-            : inp.type === 'sdf3'
-              ? 3
-              : e
-                ? (dims.get(e.source) ?? null)
-                : (dims.get(n.id) ?? null);
-      }
-      const err = issues.find((i) => i.node === n.id && i.level === 'error');
-      return {
-        id: n.id,
-        type: 'sdf' as const,
-        position: { x: n.x, y: n.y },
-        selected: selection.includes(n.id),
-        deletable: n.type !== 'output',
-        ariaLabel: `${n.name ?? def.label} node`,
-        data: {
-          type: n.type,
-          title: n.name ?? def.label,
-          summary: nodeSummary(n, doc.settings.mmPerUnit),
-          dims: nd,
-          connected: Object.fromEntries([
-            ...def.inputs.map((i) => [i.key, connected.has(`${n.id}:${i.key}`)]),
-            ['out', connected.has(`${n.id}:out`)],
-          ]),
-          error: err?.message,
-          viewing: viewRoot === n.id,
-          dimmed: !reach.has(n.id),
-        },
-      };
-    });
-  }, [doc, selection, viewRoot, issues]);
+    return doc.nodes
+      .filter((n) => !view.hidden.has(n.id))
+      .map((n) => {
+        const def = getDef(n.type)!;
+        const nd: Record<string, 2 | 3 | null> = { out: dims.get(n.id) ?? null };
+        for (const inp of def.inputs) {
+          const e = doc.edges.find((x) => x.target === n.id && x.input === inp.key);
+          nd[inp.key] =
+            inp.type === 'sdf2'
+              ? 2
+              : inp.type === 'sdf3'
+                ? 3
+                : e
+                  ? (dims.get(e.source) ?? null)
+                  : (dims.get(n.id) ?? null);
+        }
+        const err = issues.find((i) => i.node === n.id && i.level === 'error');
+        return {
+          id: n.id,
+          type: 'sdf' as const,
+          position: { x: n.x, y: n.y },
+          selected: selection.includes(n.id),
+          deletable: n.type !== 'output',
+          ariaLabel: `${n.name ?? def.label} node`,
+          data: {
+            type: n.type,
+            title: n.name ?? def.label,
+            summary: nodeSummary(n, doc.settings.mmPerUnit),
+            dims: nd,
+            connected: Object.fromEntries([
+              ...def.inputs.map((i) => [i.key, connected.has(`${n.id}:${i.key}`)]),
+              ['out', connected.has(`${n.id}:out`)],
+            ]),
+            error: err?.message,
+            viewing: viewRoot === n.id,
+            dimmed: !reach.has(n.id),
+          },
+        };
+      });
+  }, [doc, selection, viewRoot, issues, view]);
+
+  // frames first so they sit behind the nodes they enclose
+  const nodes: FlowNode[] = useMemo(() => [...view.frames, ...sdfNodes, ...view.cards], [view, sdfNodes]);
+  const positions = useRef(new Map<string, { x: number; y: number }>());
+  positions.current = new Map(nodes.map((n) => [n.id, n.position]));
 
   const edges: Edge[] = useMemo(
     () =>
-      doc.edges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: 'out',
-        targetHandle: e.input,
-        ariaLabel: 'Connection',
-      })),
-    [doc.edges],
+      doc.edges.flatMap((e) => {
+        const r = view.route(e);
+        return r ? [{ id: e.id, ...r, ariaLabel: 'Connection' }] : [];
+      }),
+    [doc.edges, view],
   );
 
   // fit the graph when a document is loaded
@@ -124,12 +147,25 @@ function Flow() {
     return () => clearTimeout(t);
   }, [frameRequest, rf]);
 
-  const onNodesChange = useCallback((changes: Iterable<NodeChange<SdfFlowNode>>) => {
+  const onNodesChange = useCallback((changes: Iterable<NodeChange<FlowNode>>) => {
     const moves: Record<string, { x: number; y: number }> = {};
     let selChanged = false;
-    const sel = new Set(store.getState().selection);
+    const st = store.getState();
+    // picking a node while a group card is active replaces the group's selection
+    const sel = new Set(st.activeGroup ? [] : st.selection);
     const removed: string[] = [];
+    let pickedGroup: string | null = null;
     for (const c of changes) {
+      if ('id' in c && isGroupNodeId(c.id)) {
+        const gid = groupIdOf(c.id);
+        if (c.type === 'position' && c.position) {
+          const old = positions.current.get(c.id);
+          if (old) moveGroupBy(gid, Math.round(c.position.x - old.x), Math.round(c.position.y - old.y));
+        } else if (c.type === 'select' && c.selected) pickedGroup = gid;
+        else if (c.type === 'remove')
+          removed.push(...(groupsOf(store.getState().doc).find((g) => g.id === gid)?.members ?? []));
+        continue;
+      }
       if (c.type === 'position' && c.position)
         moves[c.id] = { x: Math.round(c.position.x), y: Math.round(c.position.y) };
       else if (c.type === 'select') {
@@ -139,7 +175,8 @@ function Flow() {
       } else if (c.type === 'remove') removed.push(c.id);
     }
     if (Object.keys(moves).length) moveNodes(moves);
-    if (selChanged) select([...sel]);
+    if (pickedGroup) selectGroup(pickedGroup);
+    else if (selChanged) select([...sel]);
     if (removed.length) deleteNodes(removed);
   }, []);
 
@@ -150,11 +187,16 @@ function Flow() {
 
   const isValidConnection = useCallback((c: Connection | Edge) => {
     if (!c.source || !c.target || !c.targetHandle) return false;
-    return canConnect(store.getState().doc, c.source, c.target, c.targetHandle).ok;
+    const s = realEnd(c.source, c.sourceHandle);
+    const t = realEnd(c.target, c.targetHandle);
+    return canConnect(store.getState().doc, s.node, t.node, t.handle).ok;
   }, []);
 
   const onConnect = useCallback((c: Connection) => {
-    if (c.source && c.target && c.targetHandle) connectNodes(c.source, c.target, c.targetHandle);
+    if (!c.source || !c.target || !c.targetHandle) return;
+    const s = realEnd(c.source, c.sourceHandle);
+    const t = realEnd(c.target, c.targetHandle);
+    connectNodes(s.node, t.node, t.handle);
   }, []);
 
   const openAddMenu = useCallback(
@@ -176,11 +218,8 @@ function Flow() {
       if (state.isValid || state.toNode || !state.fromNode || !state.fromHandle) return;
       const pt = 'changedTouches' in event ? event.changedTouches[0] : event;
       const kind = state.fromHandle.type;
-      openAddMenu(pt.clientX, pt.clientY, {
-        node: state.fromNode.id,
-        handle: state.fromHandle.id ?? 'out',
-        kind,
-      });
+      const end = realEnd(state.fromNode.id, state.fromHandle.id);
+      openAddMenu(pt.clientX, pt.clientY, { node: end.node, handle: end.handle, kind });
     },
     [openAddMenu],
   );
@@ -189,10 +228,12 @@ function Flow() {
   const onReconnect = useCallback((old: Edge, c: Connection) => {
     const s = store.getState();
     if (!c.source || !c.target || !c.targetHandle) return;
+    const src = realEnd(c.source, c.sourceHandle);
+    const tgt = realEnd(c.target, c.targetHandle);
     const without = { ...s.doc, edges: s.doc.edges.filter((e) => e.id !== old.id) };
-    if (!canConnect(without, c.source, c.target, c.targetHandle).ok) return;
+    if (!canConnect(without, src.node, tgt.node, tgt.handle).ok) return;
     removeEdges([old.id]);
-    connectNodes(c.source, c.target, c.targetHandle);
+    connectNodes(src.node, tgt.node, tgt.handle);
   }, []);
   const onReconnectEnd = useCallback(
     (_e: MouseEvent | TouchEvent, edge: Edge, _h: unknown, state: FinalConnectionState) => {
@@ -251,7 +292,7 @@ function Flow() {
           </button>
         </div>
       </div>
-      <ReactFlow<SdfFlowNode, Edge>
+      <ReactFlow<FlowNode, Edge>
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}

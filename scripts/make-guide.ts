@@ -267,7 +267,7 @@ into the <b>Output</b>, which is what you see and export.</p>
 <li>Drag from a dot into empty space to get a list of nodes that fit there.</li>
 <li>Right-click (or press <kbd>A</kbd>) to add any node; type to search.</li>
 <li>Click the eye on a node to view only that step.</li>
-<li><i>Tidy</i> straightens the layout.</li>
+<li><i>Tidy</i> straightens the layout; <kbd>Ctrl</kbd>+<kbd>G</kbd> folds selected nodes into one group card.</li>
 </ul>
 </div>
 <div>${fig(s.graph, 'A sphere, box and torus joined, then carved by a cylinder.')}</div>
@@ -457,6 +457,7 @@ ${caseCard(
 <tr><td><kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>K</kbd></td><td>Command palette: do anything by typing</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Undo / redo</td></tr>
 <tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> / <kbd>V</kbd> / <kbd>D</kbd></td><td>Copy / paste / duplicate</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>G</kbd> (+<kbd>Shift</kbd>)</td><td>Group the selected nodes (ungroup)</td></tr>
 <tr><td><kbd>Delete</kbd></td><td>Delete the selection</td></tr>
 <tr><td><kbd>F</kbd></td><td>Frame the shape</td></tr>
 <tr><td><kbd>W</kbd> / <kbd>E</kbd> / <kbd>R</kbd></td><td>Move / rotate / scale the selected part</td></tr>

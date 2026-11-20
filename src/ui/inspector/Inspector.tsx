@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Copy,
   Eye,
+  Group,
   HelpCircle,
   Plus,
   Trash2,
@@ -31,6 +32,9 @@ import { getScene } from '../../state/scene';
 import { CommitInput, ParamField } from '../fields';
 import { NodeIcon } from '../meta';
 import { DocPanel } from './DocPanel';
+import { GroupPanel } from './GroupPanel';
+import { groupOfNode, groupsOf } from '../../core/graph/groups';
+import { groupSelection, selectGroup } from '../../state/groups';
 
 const QUICK_MODIFIERS = [
   'twist',
@@ -49,6 +53,10 @@ const QUICK_MODIFIERS = [
 export function Inspector() {
   const sel = useEditor((s) => (s.selection.length === 1 ? s.selection[0] : null));
   const multi = useEditor((s) => s.selection.length > 1);
+  const group = useEditor((s) =>
+    s.activeGroup && groupsOf(s.doc).some((g) => g.id === s.activeGroup) ? s.activeGroup : null,
+  );
+  if (group) return <GroupPanel key={group} id={group} />;
   if (multi) return <MultiPanel />;
   if (!sel) return <DocPanel />;
   return <NodePanel key={sel} id={sel} />;
@@ -63,6 +71,14 @@ function MultiPanel() {
         <div style={{ display: 'flex', gap: 6 }}>
           <button type="button" className="btn" onClick={() => duplicate(ids)}>
             <Copy size={14} /> Duplicate
+          </button>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => groupSelection()}
+            title="Collapse these nodes into one card with its own settings (Ctrl+G)"
+          >
+            <Group size={14} /> Group
           </button>
           <button type="button" className="btn danger" onClick={() => deleteNodes(ids)}>
             <Trash2 size={14} /> Delete
@@ -89,6 +105,7 @@ function NodePanel({ id }: { id: string }) {
   const params = useMemo(() => (node ? paramsOf(node.type) : []), [node]);
   if (!node || !def) return <DocPanel />;
   const mm = doc.settings.mmPerUnit;
+  const inGroup = groupOfNode(doc, id);
   const pinned = new Set(doc.pinned.filter((p) => p.node === id).map((p) => p.param));
   const groups: { key: string; title: string; items: ParamDef[] }[] = [
     { key: 'main', title: 'Shape', items: params.filter((p) => !p.group || p.group === 'main') },
@@ -101,6 +118,11 @@ function NodePanel({ id }: { id: string }) {
       {doc.pinned.length > 0 && (
         <button type="button" className="btn sm ghost back-link" onClick={() => select([])}>
           ← Shape overview and Controls
+        </button>
+      )}
+      {inGroup && (
+        <button type="button" className="btn sm ghost back-link" onClick={() => selectGroup(inGroup.id)}>
+          <Group size={13} /> Part of group “{inGroup.name}”
         </button>
       )}
       <div className="insp-head">
